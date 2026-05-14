@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PING-007 // Agent Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" />
+<style>
+  :root {
+    --black: #000000;
+    --dark: #0a0a0a;
+    --charcoal: #1a1a1a;
+    --silver: #c0c0c0;
+    --white: #ffffff;
+    --gold: #d4af37;
+    --gold-dark: #b8941f;
+    --bond-red: #8b0000;
+    --champagne: #f7e7ce;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  html, body { background: var(--black); color: var(--white); font-family: "Inter", sans-serif; font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; transition: color 0.3s ease; }
+  ::selection { background: var(--bond-red); color: var(--champagne); }
+
+  .mono { font-family: "JetBrains Mono", monospace; letter-spacing: 0.02em; }
+  .display { font-family: "Playfair Display", serif; font-weight: 400; letter-spacing: -0.01em; }
+
+  .container { max-width: 1360px; margin: 0 auto; padding: 0 40px; }
+
+  /* ============== NAV ============== */
+  nav.top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gold);
+  }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  nav.top .brand { display: flex; align-items: center; gap: 20px; }
+  nav.top .crest {
+    width: 36px; height: 36px; border: 2px solid var(--gold); border-radius: 50%;
+    display: grid; place-items: center; color: var(--black);
+    font-family: "Playfair Display", serif; font-style: italic; font-size: 16px; font-weight: 700;
+    background: var(--gold);
+  }
+  nav.top .word {
+    font-family: "Playfair Display", serif; font-size: 24px; letter-spacing: 0.2em;
+    color: var(--gold); font-weight: 700;
+  }
+  nav.top .links {
+    display: flex; gap: 32px; font-family: "Inter", sans-serif; font-size: 12px;
+    letter-spacing: 0.1em; color: var(--silver); text-transform: uppercase; font-weight: 500;
+  }
+  nav.top .links a:hover { color: var(--gold); }
+  nav.top .actions { display: flex; align-items: center; gap: 18px; }
+  nav.top .pill {
+    padding: 8px 16px; border: 1px solid var(--gold); color: var(--gold);
+    text-transform: uppercase; font-weight: 500; font-size: 11px; letter-spacing: 0.15em;
+  }
+  nav.top .pulse {
+    width: 8px; height: 8px; background: var(--gold); border-radius: 50%;
+  }
+
+  /* ============== HERO ============== */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    padding: 120px 0 80px;
+    background: linear-gradient(135deg, var(--black) 0%, var(--dark) 50%, var(--charcoal) 100%);
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    position: relative; z-index: 2;
+    display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 64px;
+    align-items: start;
+  }
+
+  .filemark {
+    display: flex; gap: 20px; align-items: center;
+    font-family: "Inter", sans-serif; font-size: 11px; letter-spacing: 0.2em;
+    color: var(--gold); text-transform: uppercase; font-weight: 500;
+  }
+  .filemark .dot { width: 4px; height: 4px; background: var(--gold); border-radius: 50%; }
+
+  .hero h1 {
+    margin-top: 32px;
+    font-family: "Playfair Display", serif;
+    font-weight: 700;
+    font-size: clamp(80px, 12vw, 180px);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--white);
+  }
+  .hero h1 .stamp {
+    display: inline-block;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold);
+  }
+  .hero h1 .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.2em;
+    letter-spacing: 0.3em;
+    color: var(--silver);
+    vertical-align: super;
+    margin-left: 16px;
+  }
+
+  .lede {
+    margin-top: 32px;
+    max-width: 580px;
+    font-family: "Playfair Display", serif;
+    font-size: 24px;
+    line-height: 1.5;
+    color: var(--champagne);
+    font-weight: 400;
+  }
+  .lede em { color: var(--gold); font-style: italic; font-weight: 500; }
+
+  .hero-meta {
+    margin-top: 40px;
+    display: grid; grid-template-columns: repeat(4, auto); gap: 32px 40px;
+    font-family: "Inter", sans-serif; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;
+  }
+  .hero-meta .k { color: var(--silver); margin-bottom: 8px; }
+  .hero-meta .v { color: var(--gold); font-size: 14px; letter-spacing: 0.1em; font-weight: 600; }
+
+  .hero-cta { display: flex; gap: 20px; margin-top: 48px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 14px;
+    padding: 16px 28px;
+    font-family: "Inter", sans-serif; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600;
+    border: 2px solid var(--gold); color: var(--gold);
+    background: transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background: var(--gold);
+    color: var(--black);
+    transform: translateY(-2px);
+  }
+  .btn.primary {
+    background: var(--bond-red);
+    border-color: var(--bond-red);
+    color: var(--white);
+  }
+  .btn.primary:hover {
+    background: #a50000;
+    transform: translateY(-2px);
+  }
+
+  /* Gun barrel simple */
+  .barrel {
+    position: relative; aspect-ratio: 1 / 1;
+    margin-top: 8px;
+  }
+  .barrel svg { width: 100%; height: 100%; display: block; }
+
+  .barrel-coord {
+    position: absolute;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+  }
+  .barrel-coord.tl { top: 0; left: 0; }
+  .barrel-coord.tr { top: 0; right: 0; text-align: right; }
+  .barrel-coord.bl { bottom: 0; left: 0; }
+  .barrel-coord.br { bottom: 0; right: 0; text-align: right; }
+
+  /* Hero ticker */
+  .hero-ticker {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+    border-top: 1px solid var(--gold);
+    background: rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+  }
+  .hero-ticker .track {
+    display: flex; gap: 60px; padding: 16px 0;
+    white-space: nowrap;
+    animation: scroll 80s linear infinite;
+    font-family: "Inter", sans-serif; font-size: 12px; letter-spacing: 0.2em;
+    color: var(--silver); text-transform: uppercase; font-weight: 500;
+  }
+  .hero-ticker .track span.hi { color: var(--bond-red); }
+  .hero-ticker .track span.go { color: var(--gold); }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ============== SECTIONS ============== */
+  section { position: relative; }
+  .sec-pad { padding: 120px 0; }
+
+  .sec-head {
+    display: grid; grid-template-columns: 1fr 2.4fr; gap: 64px;
+    margin-bottom: 64px; align-items: end;
+    border-bottom: 1px solid #333;
+    padding-bottom: 28px;
+  }
+  .sec-head .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; letter-spacing: 0.3em; color: var(--gold);
+    text-transform: uppercase;
+  }
+  .sec-head h2 {
+    font-family: "Playfair Display", serif;
+    font-weight: 400;
+    font-size: clamp(40px, 6vw, 80px);
+    line-height: 0.95;
+    letter-spacing: -0.015em;
+    margin-top: 12px;
+    color: var(--white);
+  }
+  .sec-head h2 em { font-style: italic; color: var(--gold); }
+  .sec-head .right {
+    font-family: "Playfair Display", serif;
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--champagne);
+    font-weight: 300;
+    max-width: 640px;
+    justify-self: end;
+  }
+
+  /* WARN BANNER */
+  .warn {
+    margin: 0;
+    background: var(--bond-red);
+    color: var(--white);
+    padding: 14px 0;
+    font-family: "Inter", sans-serif; font-size: 10px; letter-spacing: 0.36em; text-transform: uppercase;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  /* Simple responsive */
+  @media (max-width: 1100px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .sec-head { grid-template-columns: 1fr; }
+    .sec-head .right { justify-self: start; }
+    .hero-meta { grid-template-columns: repeat(2, auto); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== NAV ============== -->
+<nav class="top">
+  <div class="container inner">
+    <div class="brand">
+      <div class="crest">007</div>
+      <div class="word">PING-007</div>
+      <div class="mono" style="font-size:11px; letter-spacing:0.15em; color:var(--silver); margin-left:12px;">GENTLEMAN SPY TOOLKIT</div>
+    </div>
+    <div class="links">
+      <a href="#gadgets">Gadgets</a>
+      <a href="#agents">Agents</a>
+      <a href="#cover">Cover</a>
+      <a href="#sophistication">Superiority</a>
+      <a href="#mission">Mission</a>
+      <a href="#deploy">Deploy</a>
+    </div>
+    <div class="actions">
+      <span class="pulse"></span>
+      <span class="pill">SECURE LINE</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ============== HERO ============== -->
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="filemark">
+        <span>AGENT 007</span>
+        <span class="dot"></span>
+        <span>CONFIDENTIAL</span>
+        <span class="dot"></span>
+        <span>FOR YOUR EYES ONLY</span>
+      </div>
+
+      <h1>
+        <span class="display">Ping</span><br/>
+        <span class="stamp">007.</span>
+        <span class="num">v2.0.0</span>
+      </h1>
+
+      <p class="lede">
+        Advanced ICMP covert channel framework for <em>authorized penetration testing</em> and defensive research. Provides undetectable data transmission through <em>legitimate ping traffic</em> with enterprise-grade encryption.
+      </p>
+
+      <div class="hero-meta">
+        <div>
+          <div class="k">Gadget</div>
+          <div class="v">GO FRAMEWORK</div>
+        </div>
+        <div>
+          <div class="k">Cover</div>
+          <div class="v">PING UTILITY</div>
+        </div>
+        <div>
+          <div class="k">Mission</div>
+          <div class="v">COVERT CHANNEL</div>
+        </div>
+        <div>
+          <div class="k">Authorization</div>
+          <div class="v">CLASSIFIED</div>
+        </div>
+      </div>
+
+      <div class="hero-cta">
+        <a class="btn primary" href="#deploy">
+          <span>Accept Mission</span><span class="arr">→</span>
+        </a>
+        <a class="btn" href="#gadgets">
+          <span>Examine Gadgets</span><span class="arr">↗</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="barrel">
+      <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="barrel" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#000000"/>
+            <stop offset="85%" stop-color="#1a1a1a"/>
+            <stop offset="100%" stop-color="#000000"/>
+          </radialGradient>
+          <radialGradient id="target" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#8b0000"/>
+            <stop offset="70%" stop-color="#660000"/>
+            <stop offset="100%" stop-color="#440000"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Main gun barrel -->
+        <circle cx="200" cy="200" r="190" fill="url(#barrel)" stroke="#d4af37" stroke-width="3"/>
+
+        <!-- Rifling spirals -->
+        <g stroke="#d4af37" stroke-width="0.8" fill="none" opacity="0.4">
+          <path d="M 200,20 Q 320,120 200,200 Q 80,280 200,380" stroke-dasharray="3,6"/>
+          <path d="M 20,200 Q 120,80 200,200 Q 280,320 380,200" stroke-dasharray="3,6"/>
+          <path d="M 60,60 Q 200,120 200,200 Q 200,280 340,340" stroke-dasharray="3,6"/>
+          <path d="M 340,60 Q 200,120 200,200 Q 200,280 60,340" stroke-dasharray="3,6"/>
+        </g>
+
+        <!-- Crosshair -->
+        <line x1="40" y1="200" x2="360" y2="200" stroke="#d4af37" stroke-width="2"/>
+        <line x1="200" y1="40" x2="200" y2="360" stroke="#d4af37" stroke-width="2"/>
+
+        <!-- Range circles -->
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#d4af37" stroke-width="1" opacity="0.7" stroke-dasharray="2,4"/>
+        <circle cx="200" cy="200" r="100" fill="none" stroke="#d4af37" stroke-width="1" opacity="0.5"/>
+        <circle cx="200" cy="200" r="50" fill="none" stroke="#8b0000" stroke-width="2"/>
+
+        <!-- Central target -->
+        <circle cx="200" cy="200" r="25" fill="url(#target)"/>
+
+        <!-- 007 text -->
+        <text x="200" y="210" font-family="Playfair Display" font-size="20" font-weight="900" text-anchor="middle" fill="#d4af37">007</text>
+
+        <!-- Corner brackets -->
+        <g stroke="#d4af37" stroke-width="2" fill="none">
+          <path d="M 30,30 L 50,30 L 50,50"/>
+          <path d="M 370,30 L 350,30 L 350,50"/>
+          <path d="M 30,370 L 50,370 L 50,350"/>
+          <path d="M 370,370 L 350,370 L 350,350"/>
+        </g>
+
+        <!-- Tracking dots -->
+        <circle cx="80" cy="200" r="2" fill="#8b0000" opacity="0.8">
+          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="320" cy="200" r="2" fill="#8b0000" opacity="0.8">
+          <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="200" cy="80" r="2" fill="#d4af37" opacity="0.8">
+          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="200" cy="320" r="2" fill="#d4af37" opacity="0.8">
+          <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+
+      <div class="barrel-coord tl">AGENT 007<br/>ACTIVE</div>
+      <div class="barrel-coord tr">MISSION READY<br/>CLEARANCE GOLD</div>
+      <div class="barrel-coord bl">Q-BRANCH<br/>CERTIFIED</div>
+      <div class="barrel-coord br">TARGET LOCKED<br/>CRYPTO SECURE</div>
+    </div>
+  </div>
+
+  <div class="hero-ticker">
+    <div class="track">
+      <span>COVERT CHANNEL ESTABLISHED</span>
+      <span class="hi">● SHAKEN NOT STIRRED</span>
+      <span>DEEP COVER PING MIMICRY</span>
+      <span class="go">◇ CASINO ROYALE ENCRYPTION</span>
+      <span>SOPHISTICATED TRADECRAFT</span>
+      <span class="hi">● GADGET DEPLOYMENT READY</span>
+      <span>GENTLEMAN SPY PROTOCOLS</span>
+      <span class="go">◇ MISSION PARAMETERS SET</span>
+      <span>COVERT CHANNEL ESTABLISHED</span>
+      <span class="hi">● SHAKEN NOT STIRRED</span>
+      <span>DEEP COVER PING MIMICRY</span>
+      <span class="go">◇ CASINO ROYALE ENCRYPTION</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============== WARN ============== -->
+<div class="warn">
+  <span>● For Your Eyes Only · Licensed operatives and Q-Branch personnel · Unauthorized use is strictly prohibited ●</span>
+</div>
+
+<!-- GADGETS -->
+<section id="gadgets" class="sec-pad" style="background: #0a0a0a;">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <div class="num">§ 01 / Q-BRANCH ARSENAL</div>
+        <h2>Sophisticated <em>gadgets</em>.</h2>
+      </div>
+      <div class="right">
+        Advanced penetration testing modules for authorized security assessments. ICMP-based covert channels, multi-layer encryption, and threat simulation capabilities for comprehensive security validation.
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+      <div style="border: 1px solid #333; padding: 24px; background: rgba(26,26,26,0.5);">
+        <h3 style="color: var(--gold); font-family: Playfair Display; font-size: 20px; margin-bottom: 12px;">Perfect Mimicry Engine</h3>
+        <p style="color: var(--silver); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">Wire-level identical to legitimate ping traffic. PID-based identifiers, standard 56-byte patterns, proper sequence numbers.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--champagne); background: #111; padding: 8px; border: 1px solid #333;">64 bytes: Linux | 40 bytes: Windows<br/>Timing: 1000ms ± 150ms jitter</div>
+      </div>
+
+      <div style="border: 1px solid #333; padding: 24px; background: rgba(26,26,26,0.5);">
+        <h3 style="color: var(--gold); font-family: Playfair Display; font-size: 20px; margin-bottom: 12px;">Crypto-Agility System</h3>
+        <p style="color: var(--silver); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">AES256-GCM with automatic 5-minute key rotation. Multi-algorithm support prevents crypto-analysis.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--champagne); background: #111; padding: 8px; border: 1px solid #333;">AES256 → ChaCha20 → CustomXOR<br/>Nonce: 96-bit unique per packet</div>
+      </div>
+
+      <div style="border: 1px solid #333; padding: 24px; background: rgba(26,26,26,0.5);">
+        <h3 style="color: var(--gold); font-family: Playfair Display; font-size: 20px; margin-bottom: 12px;">Steganographic Shell</h3>
+        <p style="color: var(--silver); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">Interactive command execution hidden in legitimate ping patterns. XOR-based data concealment in payload region.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--champagne); background: #111; padding: 8px; border: 1px solid #333;">Mode: Interactive | Batch<br/>Encryption: End-to-end</div>
+      </div>
+
+      <div style="border: 1px solid #333; padding: 24px; background: rgba(26,26,26,0.5);">
+        <h3 style="color: var(--gold); font-family: Playfair Display; font-size: 20px; margin-bottom: 12px;">APT Simulation Engine</h3>
+        <p style="color: var(--silver); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">Real-world threat actor behavior patterns. Lazarus, APT29, APT28, Equation Group timing and tactics.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--champagne); background: #111; padding: 8px; border: 1px solid #333;">Profiles: 4 APT groups<br/>Duration: Configurable campaigns</div>
+      </div>
+
+      <div style="border: 1px solid #333; padding: 24px; background: rgba(26,26,26,0.5);">
+        <h3 style="color: var(--gold); font-family: Playfair Display; font-size: 20px; margin-bottom: 12px;">Anti-Sandbox Matrix</h3>
+        <p style="color: var(--silver); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">Multi-layer environment detection prevents analysis. Uptime, process count, registry, and file system validation.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--champagne); background: #111; padding: 8px; border: 1px solid #333;">Min uptime: 30min | Processes: >50<br/>VM detection: Registry + Files</div>
+      </div>
+
+      <div style="border: 1px solid #333; padding: 24px; background: rgba(26,26,26,0.5);">
+        <h3 style="color: var(--gold); font-family: Playfair Display; font-size: 20px; margin-bottom: 12px;">Adaptive Exfiltration</h3>
+        <p style="color: var(--silver); font-size: 14px; line-height: 1.6; margin-bottom: 12px;">Smart chunking based on signature type. Automatic size adjustment, error correction, integrity verification.</p>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--champagne); background: #111; padding: 8px; border: 1px solid #333;">Linux: 48 bytes | Windows: 24 bytes<br/>Modes: Stealth | Fast | Covert</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTS -->
+<section id="agents" class="sec-pad" style="background: var(--black);">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <div class="num">§ 02 / SECRET AGENTS</div>
+        <h2>Licensed <em>operatives</em>.</h2>
+      </div>
+      <div class="right">
+        Four operational roles for authorized security testing. Each engagement requires proper authorization scope and comprehensive post-operation reporting.
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0; border: 1px solid #333;">
+      <div style="padding: 32px 24px; border-right: 1px solid #333;">
+        <div style="color: var(--gold); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px;">Double-O Agent</div>
+        <h4 style="font-family: Playfair Display; font-size: 24px; color: var(--white); margin-bottom: 8px;">The <em style="color: var(--gold);">Infiltrator</em></h4>
+        <div style="color: var(--silver); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px;">LICENSE TO PENETRATE</div>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.5;">Sophisticated gentleman spy conducting deep-cover network infiltration for authorized intelligence gathering.</p>
+      </div>
+
+      <div style="padding: 32px 24px; border-right: 1px solid #333;">
+        <div style="color: var(--gold); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px;">Q-Branch</div>
+        <h4 style="font-family: Playfair Display; font-size: 24px; color: var(--white); margin-bottom: 8px;">The <em style="color: var(--gold);">Quartermaster</em></h4>
+        <div style="color: var(--silver); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px;">GADGET SPECIALIST</div>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.5;">Brilliant engineer testing defensive systems and developing sophisticated countermeasures.</p>
+      </div>
+
+      <div style="padding: 32px 24px; border-right: 1px solid #333;">
+        <div style="color: var(--gold); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px;">Intelligence</div>
+        <h4 style="font-family: Playfair Display; font-size: 24px; color: var(--white); margin-bottom: 8px;">The <em style="color: var(--gold);">Analyst</em></h4>
+        <div style="color: var(--silver); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px;">STRATEGIC PLANNING</div>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.5;">Coordinates red/blue exercises using realistic adversary behavioral patterns.</p>
+      </div>
+
+      <div style="padding: 32px 24px;">
+        <div style="color: var(--gold); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px;">Academic</div>
+        <h4 style="font-family: Playfair Display; font-size: 24px; color: var(--white); margin-bottom: 8px;">The <em style="color: var(--gold);">Professor</em></h4>
+        <div style="color: var(--silver); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px;">RESEARCH DIVISION</div>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.5;">Studies covert channel techniques for defensive research and threat intelligence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COVER -->
+<section id="cover" class="sec-pad" style="background: #0a0a0a;">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <div class="num">§ 03 / PERFECT COVER</div>
+        <h2>The art of <em>deception</em>.</h2>
+      </div>
+      <div class="right">
+        Wire-level traffic analysis demonstrating perfect mimicry of legitimate ping traffic. Advanced steganography and multi-layer encryption ensure complete invisibility while maintaining protocol compliance.
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px;">
+      <div>
+        <div style="background: #0a0a0a; border: 1px solid #333; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #111; border-bottom: 1px solid #333;">
+            <span style="font-family: JetBrains Mono; font-size: 10px; color: var(--silver); text-transform: uppercase;">LEGITIMATE PING</span>
+            <span style="color: var(--gold); font-size: 10px;">iputils 20240117</span>
+          </div>
+          <pre style="padding: 20px; font-family: JetBrains Mono; font-size: 11px; line-height: 1.6; color: var(--white); overflow-x: auto;">PING 192.168.1.20 (192.168.1.20) 56(84) bytes
+64 bytes from 192.168.1.20: icmp_seq=1 ttl=64
+time=0.043 ms
+
+<span style="color: var(--silver);">0x0000:</span> 4500 0054 12a3 4000 4001 8d3c
+<span style="color: var(--silver);">0x0010:</span> 0800 4f7a 3a8b 0001 a942 1865
+<span style="color: var(--silver);">0x0020:</span> 0000 0000 1f23 0a00 1011 1213</pre>
+        </div>
+      </div>
+
+      <div>
+        <div style="background: #0a0a0a; border: 1px solid #333; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #111; border-bottom: 1px solid #333;">
+            <span style="font-family: JetBrains Mono; font-size: 10px; color: var(--silver); text-transform: uppercase;">PING-007 COVERT</span>
+            <span style="color: var(--bond-red); font-size: 10px;">v2.0.0</span>
+          </div>
+          <pre style="padding: 20px; font-family: JetBrains Mono; font-size: 11px; line-height: 1.6; color: var(--white); overflow-x: auto;">PING 192.168.1.20 (192.168.1.20) 56(84) bytes
+64 bytes from 192.168.1.20: icmp_seq=1 ttl=64
+time=0.043 ms
+
+<span style="color: var(--silver);">0x0000:</span> 4500 0054 12a3 4000 4001 8d3c
+<span style="color: var(--silver);">0x0010:</span> 0800 4f7a 3a8b 0001 a942 1865
+<span style="color: var(--silver);">0x0020:</span> <span style="color: var(--bond-red);">7c3a e91d 4f02 a1bb c6e4 0a18</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 24px 0; font-family: Playfair Display; font-style: italic; font-size: 18px; color: var(--gold);">
+      — identical headers · encrypted payload concealed in pattern region —
+    </div>
+  </div>
+</section>
+
+<!-- SOPHISTICATION -->
+<section id="sophistication" class="sec-pad" style="background: var(--black);">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <div class="num">§ 03½ / TECHNICAL SUPERIORITY</div>
+        <h2>Beyond <em>ordinary tools</em>.</h2>
+      </div>
+      <div class="right">
+        Comprehensive comparison demonstrating PING-007's technological advantages over conventional ICMP utilities and penetration testing frameworks.
+      </div>
+    </div>
+
+    <div style="overflow-x: auto; margin-top: 32px;">
+      <table style="width: 100%; border-collapse: collapse; border: 1px solid #333; background: rgba(10,10,10,0.8);">
+        <thead>
+          <tr style="background: #111; border-bottom: 2px solid var(--gold);">
+            <th style="padding: 16px 20px; text-align: left; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.15em;">Capability</th>
+            <th style="padding: 16px 20px; text-align: center; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--silver); text-transform: uppercase; letter-spacing: 0.15em;">Standard Tools</th>
+            <th style="padding: 16px 20px; text-align: center; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--silver); text-transform: uppercase; letter-spacing: 0.15em;">Scapy</th>
+            <th style="padding: 16px 20px; text-align: center; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--silver); text-transform: uppercase; letter-spacing: 0.15em;">Hping3</th>
+            <th style="padding: 16px 20px; text-align: center; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.15em; background: rgba(212, 175, 55, 0.1);">PING-007</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 14px 20px; color: var(--white); font-family: 'Playfair Display', serif; font-size: 16px;">Detection Risk</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">HIGH</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">HIGH</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ffaa44; font-family: 'JetBrains Mono', monospace; font-size: 11px;">MEDIUM</td>
+            <td style="padding: 14px 20px; text-align: center; color: #44ff44; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(212, 175, 55, 0.05);">ZERO</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 14px 20px; color: var(--white); font-family: 'Playfair Display', serif; font-size: 16px;">Encryption</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #44ff44; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(212, 175, 55, 0.05);">AES256-GCM</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 14px 20px; color: var(--white); font-family: 'Playfair Display', serif; font-size: 16px;">Timing Evasion</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Fixed</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Predictable</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Static</td>
+            <td style="padding: 14px 20px; text-align: center; color: #44ff44; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(212, 175, 55, 0.05);">Adaptive</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 14px 20px; color: var(--white); font-family: 'Playfair Display', serif; font-size: 16px;">Performance</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ffaa44; font-family: 'JetBrains Mono', monospace; font-size: 11px;">1K pps</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">100 pps</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ffaa44; font-family: 'JetBrains Mono', monospace; font-size: 11px;">2K pps</td>
+            <td style="padding: 14px 20px; text-align: center; color: #44ff44; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(212, 175, 55, 0.05);">50K+ pps</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #333;">
+            <td style="padding: 14px 20px; color: var(--white); font-family: 'Playfair Display', serif; font-size: 16px;">Steganography</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Raw</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Clear</td>
+            <td style="padding: 14px 20px; text-align: center; color: #44ff44; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(212, 175, 55, 0.05);">XOR Hidden</td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 20px; color: var(--white); font-family: 'Playfair Display', serif; font-size: 16px;">Anti-Analysis</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #ff4444; font-family: 'JetBrains Mono', monospace; font-size: 11px;">None</td>
+            <td style="padding: 14px 20px; text-align: center; color: #44ff44; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(212, 175, 55, 0.05);">Multi-layer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px;">
+      <div style="padding: 24px; border: 1px solid var(--gold); background: rgba(212, 175, 55, 0.05);">
+        <h4 style="color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 12px;">Perfect Mimicry</h4>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.6;">Wire-level identical to legitimate ping. Uses real PIDs, standard timing, proper headers. Undetectable by deep packet inspection.</p>
+      </div>
+
+      <div style="padding: 24px; border: 1px solid var(--gold); background: rgba(212, 175, 55, 0.05);">
+        <h4 style="color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 12px;">Smart Adaptation</h4>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.6;">Automatic timing adjustment based on network conditions. Adaptive delays, jitter, and burst protection prevent pattern detection.</p>
+      </div>
+
+      <div style="padding: 24px; border: 1px solid var(--gold); background: rgba(212, 175, 55, 0.05);">
+        <h4 style="color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 12px;">Enterprise Security</h4>
+        <p style="color: var(--silver); font-size: 13px; line-height: 1.6;">Military-grade encryption with automatic key rotation. Multi-layer obfuscation and anti-sandbox detection.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSION -->
+<section id="mission" class="sec-pad" style="background: var(--black);">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <div class="num">§ 04 / MISSION BRIEFING</div>
+        <h2>Gentleman's <em>tradecraft</em>.</h2>
+      </div>
+      <div class="right">
+        Four-phase operational workflow for covert channel deployment. Each phase includes validation checkpoints and comprehensive operational security measures.
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #333; margin-top: 32px;">
+      <div style="padding: 36px 28px 36px 0; border-right: 1px solid #333;">
+        <div style="font-family: Playfair Display; font-style: italic; font-size: 48px; line-height: 1; color: var(--gold);">i.</div>
+        <h4 style="margin-top: 18px; font-family: Playfair Display; font-size: 20px; font-weight: 400; line-height: 1.1; color: var(--white);">Reconnaissance.</h4>
+        <p style="margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--silver);">Survey the target environment and prepare sophisticated equipment.</p>
+        <div style="margin-top: 16px; font-family: JetBrains Mono; font-size: 11px; color: var(--champagne); padding: 8px 10px; background: #111; border: 1px solid #333;">ping-007 status --recon</div>
+      </div>
+
+      <div style="padding: 36px 28px 36px 0; border-right: 1px solid #333;">
+        <div style="font-family: Playfair Display; font-style: italic; font-size: 48px; line-height: 1; color: var(--gold);">ii.</div>
+        <h4 style="margin-top: 18px; font-family: Playfair Display; font-size: 20px; font-weight: 400; line-height: 1.1; color: var(--white);">Infiltration.</h4>
+        <p style="margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--silver);">Establish invisible presence within the target network.</p>
+        <div style="margin-top: 16px; font-family: JetBrains Mono; font-size: 11px; color: var(--champagne); padding: 8px 10px; background: #111; border: 1px solid #333;">ping-007 basic -t target --stealth</div>
+      </div>
+
+      <div style="padding: 36px 28px 36px 0; border-right: 1px solid #333;">
+        <div style="font-family: Playfair Display; font-style: italic; font-size: 48px; line-height: 1; color: var(--gold);">iii.</div>
+        <h4 style="margin-top: 18px; font-family: Playfair Display; font-size: 20px; font-weight: 400; line-height: 1.1; color: var(--white);">Acquisition.</h4>
+        <p style="margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--silver);">Secure the objective with Swiss precision.</p>
+        <div style="margin-top: 16px; font-family: JetBrains Mono; font-size: 11px; color: var(--champagne); padding: 8px 10px; background: #111; border: 1px solid #333;">ping-007 exfil -f classified.txt</div>
+      </div>
+
+      <div style="padding: 36px 28px 36px 0;">
+        <div style="font-family: Playfair Display; font-style: italic; font-size: 48px; line-height: 1; color: var(--gold);">iv.</div>
+        <h4 style="margin-top: 18px; font-family: Playfair Display; font-size: 20px; font-weight: 400; line-height: 1.1; color: var(--white);">Exfiltration.</h4>
+        <p style="margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--silver);">Disappear without a trace, leaving no evidence.</p>
+        <div style="margin-top: 16px; font-family: JetBrains Mono; font-size: 11px; color: var(--champagne); padding: 8px 10px; background: #111; border: 1px solid #333;">ping-007 listen -o ./vault</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPLOY -->
+<section id="deploy" class="sec-pad" style="background: #0a0a0a;">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <div class="num">§ 05 / Q-BRANCH DEPLOYMENT</div>
+        <h2>Equipment <em>requisition</em>.</h2>
+      </div>
+      <div class="right">
+        Automated build and deployment system with dependency management and cross-platform support for authorized testing environments.
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px;">
+      <div>
+        <ol style="list-style: none; border-top: 1px solid #333;">
+          <li style="display: grid; grid-template-columns: 60px 1fr; gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid #333;">
+            <div style="font-family: Playfair Display; font-style: italic; font-size: 24px; color: var(--gold);">i.</div>
+            <div>
+              <h5 style="font-family: Playfair Display; font-size: 18px; font-weight: 400; margin-bottom: 6px; color: var(--white);">Security Clearance</h5>
+              <p style="font-size: 13px; color: var(--silver);">Verify credentials: Go 1.22+, proper environment, and appropriate privileges for covert operations.</p>
+            </div>
+          </li>
+          <li style="display: grid; grid-template-columns: 60px 1fr; gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid #333;">
+            <div style="font-family: Playfair Display; font-style: italic; font-size: 24px; color: var(--gold);">ii.</div>
+            <div>
+              <h5 style="font-family: Playfair Display; font-size: 18px; font-weight: 400; margin-bottom: 6px; color: var(--white);">Equipment Acquisition</h5>
+              <p style="font-size: 13px; color: var(--silver);">Secure the classified toolkit from Q-Branch repositories with proper authorization codes.</p>
+            </div>
+          </li>
+          <li style="display: grid; grid-template-columns: 60px 1fr; gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid #333;">
+            <div style="font-family: Playfair Display; font-style: italic; font-size: 24px; color: var(--gold);">iii.</div>
+            <div>
+              <h5 style="font-family: Playfair Display; font-size: 18px; font-weight: 400; margin-bottom: 6px; color: var(--white);">Gadget Assembly</h5>
+              <p style="font-size: 13px; color: var(--silver);">Craft your sophisticated instruments with Swiss precision. Choose stealth mode for maximum discretion.</p>
+            </div>
+          </li>
+          <li style="display: grid; grid-template-columns: 60px 1fr; gap: 24px; align-items: start; padding: 22px 0;">
+            <div style="font-family: Playfair Display; font-style: italic; font-size: 24px; color: var(--gold);">iv.</div>
+            <div>
+              <h5 style="font-family: Playfair Display; font-size: 18px; font-weight: 400; margin-bottom: 6px; color: var(--white);">Field Testing</h5>
+              <p style="font-size: 13px; color: var(--silver);">Verify all systems operational and ready for deployment. Your mission depends on perfect execution.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <div>
+        <div style="background: #0a0a0a; border: 1px solid #333; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #111; border-bottom: 1px solid #333;">
+            <span style="font-family: JetBrains Mono; font-size: 10px; color: var(--silver); text-transform: uppercase;">Q-BRANCH TERMINAL</span>
+            <span style="color: var(--gold); font-size: 10px;">v2.0.0</span>
+          </div>
+          <pre style="padding: 20px; font-family: JetBrains Mono; font-size: 11px; line-height: 1.6; color: var(--white);">$ <span style="color: var(--champagne);">make build</span>
+<span style="color: var(--gold);">Building PING-007 framework...</span>
+go build -ldflags="-w -s" -o ping-007
+<span style="color: var(--gold);">✓ Binary compiled: ping-007 (3.2MB)</span>
+
+$ <span style="color: var(--champagne);">sudo make install</span>
+<span style="color: var(--gold);">Installing to /usr/local/bin...</span>
+<span style="color: var(--gold);">✓ Installation complete</span>
+
+$ <span style="color: var(--champagne);">ping-007 status</span>
+<span style="color: var(--gold);">PING-007 Framework Status:</span>
+<span style="color: var(--white);">Version:</span> v2.0.0
+<span style="color: var(--white);">Crypto:</span> AES256-GCM <span style="color: var(--gold);">[READY]</span>
+<span style="color: var(--white);">Network:</span> RAW ICMP <span style="color: var(--gold);">[READY]</span>
+<span style="color: var(--white);">Privileges:</span> ROOT <span style="color: var(--gold);">[GRANTED]</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding: 80px 0; background: var(--black); text-align: center;">
+  <div class="container">
+    <div style="font-family: 'Playfair Display', serif; font-style: italic; font-size: 56px; line-height: 1; letter-spacing: -0.02em; color: var(--white);">
+      Licensed<br/><em style="color: var(--gold);">to infiltrate.</em>
+    </div>
+    <div style="margin-top: 24px; font-size: 12px; color: var(--silver); font-weight: 300; max-width: 380px; line-height: 1.6; margin-left: auto; margin-right: auto;">
+      This sophisticated toolkit is exclusively for authorized intelligence operations, defensive countermeasures, and Q-Branch research.
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

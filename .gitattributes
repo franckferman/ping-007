@@ -1,0 +1,87 @@
+# PING-007 Framework .gitattributes
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Go source code
+*.go text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf
+
+# Makefiles
+Makefile text eol=lf
+*.mk text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Configuration files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+*.rst text eol=lf
+
+# Web files
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+
+# Archives
+*.zip binary
+*.tar.gz binary
+*.7z binary
+*.rar binary
+
+# Executables
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Certificates and keys
+*.key binary
+*.pem text eol=lf
+*.crt text eol=lf
+*.cer binary
+*.p12 binary
+*.pfx binary
+
+# Exclude from export (GitHub releases)
+.gitignore export-ignore
+.gitattributes export-ignore
+CLAUDE.md export-ignore
+DOCS.md export-ignore
+*.old export-ignore
+*.backup export-ignore
+/test* export-ignore
+/mock* export-ignore
+/benchmark.out export-ignore
+/coverage.* export-ignore
+
+# Language detection overrides
+*.yml linguist-language=YAML
+*.yaml linguist-language=YAML
+Makefile linguist-language=Makefile
+
+# Exclude documentation from language statistics
+docs/** linguist-documentation
+*.html linguist-documentation=true
+
+# Security: mark sensitive files
+config/**/*.key filter=git-crypt diff=git-crypt
+*.env filter=git-crypt diff=git-crypt
+secrets.* filter=git-crypt diff=git-crypt
