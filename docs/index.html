@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PING-007 // Agent Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" />
+<style>
+  :root {
+    --black: #000000;
+    --dark: #0a0a0a;
+    --charcoal: #1a1a1a;
+    --silver: #c0c0c0;
+    --white: #ffffff;
+    --gold: #d4af37;
+    --gold-dark: #b8941f;
+    --bond-red: #8b0000;
+    --champagne: #f7e7ce;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  html, body { background: var(--black); color: var(--white); font-family: "Inter", sans-serif; font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; transition: color 0.3s ease; }
+  ::selection { background: var(--bond-red); color: var(--champagne); }
+
+  .mono { font-family: "JetBrains Mono", monospace; letter-spacing: 0.02em; }
+  .display { font-family: "Playfair Display", serif; font-weight: 400; letter-spacing: -0.01em; }
+
+  .container { max-width: 1360px; margin: 0 auto; padding: 0 40px; }
+
+  /* ============== NAV ============== */
+  nav.top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gold);
+  }
+  nav.top .inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  nav.top .brand { display: flex; align-items: center; gap: 20px; }
+  nav.top .crest {
+    width: 36px; height: 36px; border: 2px solid var(--gold); border-radius: 50%;
+    display: grid; place-items: center; color: var(--black);
+    font-family: "Playfair Display", serif; font-style: italic; font-size: 16px; font-weight: 700;
+    background: var(--gold);
+  }
+  nav.top .word {
+    font-family: "Playfair Display", serif; font-size: 24px; font-weight: 700;
+    color: var(--white); letter-spacing: 2px;
+  }
+  nav.top .links { display: flex; gap: 40px; }
+  nav.top .links a {
+    font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--silver); transition: color 0.3s ease;
+  }
+  nav.top .links a:hover { color: var(--gold); }
+
+  /* ============== HERO ============== */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at center, rgba(212, 175, 55, 0.1) 0%, transparent 50%);
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 800px; height: 800px; transform: translate(-50%, -50%);
+    border: 2px solid rgba(212, 175, 55, 0.2);
+    border-radius: 50%; animation: rotate 60s linear infinite;
+  }
+  .hero::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 600px; height: 600px; transform: translate(-50%, -50%);
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    border-radius: 50%; animation: rotate -40s linear infinite;
+  }
+  @keyframes rotate {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .hero .content { text-align: center; z-index: 10; position: relative; }
+  .hero .number { font-family: "Playfair Display", serif; font-size: 120px; font-weight: 900; color: var(--gold); line-height: 0.9; }
+  .hero .subtitle { font-size: 24px; font-weight: 300; color: var(--silver); margin-bottom: 32px; letter-spacing: 4px; }
+  .hero .description { font-size: 18px; color: var(--white); max-width: 600px; margin: 0 auto 48px; line-height: 1.7; }
+  .hero .cta { display: inline-flex; align-items: center; gap: 16px; padding: 16px 32px; background: var(--gold); color: var(--black); font-weight: 600; border-radius: 4px; transition: background 0.3s ease; }
+  .hero .cta:hover { background: var(--gold-dark); }
+
+  /* ============== SECTIONS ============== */
+  .section { padding: 120px 0; }
+  .section-header { text-align: center; margin-bottom: 80px; }
+  .section-header h2 { font-family: "Playfair Display", serif; font-size: 48px; font-weight: 700; color: var(--white); margin-bottom: 16px; }
+  .section-header p { font-size: 18px; color: var(--silver); max-width: 600px; margin: 0 auto; }
+
+  .features { background: linear-gradient(135deg, var(--dark) 0%, var(--charcoal) 100%); }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; }
+  .feature {
+    padding: 40px; background: rgba(26, 26, 26, 0.8); border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px; transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+  .feature:hover { transform: translateY(-4px); border-color: var(--gold); }
+  .feature h3 { font-family: "Playfair Display", serif; font-size: 24px; color: var(--gold); margin-bottom: 16px; }
+  .feature p { color: var(--silver); line-height: 1.6; }
+  .feature code {
+    font-family: "JetBrains Mono", monospace;
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--champagne);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: block;
+    margin: 4px 0;
+  }
+
+  .specs { background: var(--black); }
+  .specs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; }
+  .spec-item { padding: 32px; background: var(--dark); border-left: 4px solid var(--gold); }
+  .spec-item h4 { color: var(--gold); font-size: 18px; margin-bottom: 8px; }
+  .spec-item p { color: var(--silver); font-family: "JetBrains Mono", monospace; font-size: 14px; }
+
+  .mission { background: linear-gradient(135deg, var(--charcoal) 0%, var(--black) 100%); }
+  .mission-content { max-width: 800px; margin: 0 auto; text-align: center; }
+  .mission-content h2 { font-family: "Playfair Display", serif; font-size: 36px; color: var(--white); margin-bottom: 24px; }
+  .mission-content p { font-size: 18px; color: var(--silver); line-height: 1.7; margin-bottom: 32px; }
+  .mission-buttons { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+  .btn { padding: 16px 32px; font-weight: 600; border-radius: 4px; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 12px; }
+  .btn-primary { background: var(--gold); color: var(--black); }
+  .btn-primary:hover { background: var(--gold-dark); }
+  .btn-secondary { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+  .btn-secondary:hover { background: var(--gold); color: var(--black); }
+
+  /* ============== FOOTER ============== */
+  footer { padding: 80px 0; background: var(--dark); border-top: 1px solid rgba(212, 175, 55, 0.3); }
+  footer .content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 32px; }
+  footer .branding { display: flex; align-items: center; gap: 16px; }
+  footer .crest { width: 32px; height: 32px; border: 2px solid var(--gold); border-radius: 50%; display: grid; place-items: center; color: var(--black); font-family: "Playfair Display", serif; font-style: italic; font-size: 14px; font-weight: 700; background: var(--gold); }
+  footer .info { color: var(--silver); font-size: 14px; }
+  footer .links { display: flex; gap: 32px; }
+  footer .links a { color: var(--silver); font-size: 14px; transition: color 0.3s ease; }
+  footer .links a:hover { color: var(--gold); }
+
+  /* ============== RESPONSIVE ============== */
+  @media (max-width: 768px) {
+    nav.top .links { display: none; }
+    .hero .number { font-size: 80px; }
+    .hero .subtitle { font-size: 18px; }
+    .section { padding: 80px 0; }
+    .section-header h2 { font-size: 36px; }
+    .container { padding: 0 24px; }
+    .mission-buttons { flex-direction: column; align-items: center; }
+    footer .content { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="top">
+  <div class="container">
+    <div class="inner">
+      <div class="brand">
+        <div class="crest">P</div>
+        <div class="word">PING-007</div>
+      </div>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#specs">Architecture</a>
+        <a href="#commands">Commands</a>
+        <a href="#usage">Usage</a>
+        <a href="#crypto">Protocol</a>
+        <a href="#mission">Operation</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <div class="container">
+    <div class="content">
+      <div class="number">007</div>
+      <div class="subtitle">COVERT COMMUNICATIONS FRAMEWORK</div>
+      <p class="description">
+        Professional-grade cryptographic framework for secure covert communications via ICMP protocol.
+        Advanced evasion techniques and enterprise-level security for authorized operations.
+      </p>
+      <a href="#mission" class="cta">
+        <span>Begin Mission</span>
+        <span>→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES SECTION -->
+<section id="features" class="section features">
+  <div class="container">
+    <div class="section-header">
+      <h2>Framework Capabilities</h2>
+      <p>Professional cryptographic implementations for secure communication protocols</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <h3>Complete Security Transformation</h3>
+        <p>Version 2.0 represents comprehensive vulnerability remediation with all 9 identified critical security vulnerabilities addressed and validated through extensive testing.</p>
+      </div>
+      <div class="feature">
+        <h3>Multi-Modal Authentication System</h3>
+        <p>Four distinct authentication methods: password-based with PBKDF2 (100,000 iterations), cryptographic keyfile support, planned ECDH key exchange, and secure random key generation.</p>
+      </div>
+      <div class="feature">
+        <h3>Advanced Cryptographic Protocols</h3>
+        <p>NIST-approved algorithms including AES-256-GCM and ChaCha20-Poly1305 AEAD encryption. Contextual AAD binding with IP, session, and sequence authentication for replay protection.</p>
+      </div>
+      <div class="feature">
+        <h3>Sophisticated SOC Evasion</h3>
+        <p>Operating system signature mimicry (Linux/Windows ping patterns), human-behavioral timing simulation, ultra-stealth operational modes, and signature rotation mechanisms.</p>
+      </div>
+      <div class="feature">
+        <h3>Enterprise Cross-Platform Support</h3>
+        <p>Production-ready implementations for Linux, macOS, and Windows platforms with specialized build targets for stealth operations, embedded deployments, and enterprise environments.</p>
+      </div>
+      <div class="feature">
+        <h3>Perfect Forward Secrecy</h3>
+        <p>Session isolation with comprehensive contextual binding mechanisms, collision-resistant nonce generation, and automatic cryptographic key zeroing for maximum operational security.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPECS SECTION -->
+<section id="specs" class="section specs">
+  <div class="container">
+    <div class="section-header">
+      <h2>Technical Specifications</h2>
+      <p>Enterprise-grade architecture and performance metrics</p>
+    </div>
+    <div class="specs-grid">
+      <div class="spec-item">
+        <h4>AEAD Encryption Suite</h4>
+        <p>AES-256-GCM | ChaCha20-Poly1305 | Custom XOR-CFB-HMAC</p>
+      </div>
+      <div class="spec-item">
+        <h4>Key Derivation Functions</h4>
+        <p>PBKDF2-SHA256 (100,000 iterations) | Secure keyfile support (16-64 bytes)</p>
+      </div>
+      <div class="spec-item">
+        <h4>Authentication Methods</h4>
+        <p>Password-based | Cryptographic keyfiles | ECDH P-256 (planned) | Random generation</p>
+      </div>
+      <div class="spec-item">
+        <h4>Cross-Platform Architecture</h4>
+        <p>Linux (primary) | macOS (Intel/Apple Silicon) | Windows (Admin privileges)</p>
+      </div>
+      <div class="spec-item">
+        <h4>Security Enhancements</h4>
+        <p>Contextual AAD binding | Collision-resistant nonces | Algorithm auto-detection</p>
+      </div>
+      <div class="spec-item">
+        <h4>Operational Metrics</h4>
+        <p>1400 bytes/packet capacity | Sub-5ms crypto overhead | Zero memory leaks</p>
+      </div>
+      <div class="spec-item">
+        <h4>Evasion Techniques</h4>
+        <p>OS signature mimicry | Human timing patterns | Ultra-stealth modes</p>
+      </div>
+      <div class="spec-item">
+        <h4>Build System</h4>
+        <p>Cross-compilation | Stealth builds | Embedded configurations | UPX compression</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CRYPTO SECTION -->
+<section id="crypto" class="section mission">
+  <div class="container">
+    <div class="mission-content">
+      <h2>Version 2.0 Architecture</h2>
+      <p>
+        Complete architectural transformation featuring NIST-approved cryptographic algorithms,
+        comprehensive security vulnerability remediation (9 critical issues resolved), and
+        advanced evasion capabilities. Implements perfect forward secrecy with session isolation,
+        contextual AAD binding for replay protection, and collision-resistant nonce generation
+        for enterprise-grade security operations.
+      </p>
+      <div class="mission-buttons">
+        <a href="technical/" class="btn btn-primary">
+          <span>Technical Docs</span>
+        </a>
+        <a href="architecture/" class="btn btn-secondary">
+          <span>Architecture</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMANDS SECTION -->
+<section id="commands" class="section specs">
+  <div class="container">
+    <div class="section-header">
+      <h2>Available Commands & Operations</h2>
+      <p>Comprehensive command set and operational modes</p>
+    </div>
+
+    <div class="specs-grid">
+      <div class="spec-item">
+        <h4>Core Commands</h4>
+        <p>basic | stealth | listen | keygen</p>
+      </div>
+      <div class="spec-item">
+        <h4>Specialized Operations</h4>
+        <p>apt | shell | exfil | analyze | status</p>
+      </div>
+      <div class="spec-item">
+        <h4>Authentication Flags</h4>
+        <p>--password | --keyfile | --key-exchange</p>
+      </div>
+      <div class="spec-item">
+        <h4>Evasion Flags</h4>
+        <p>--delay | --human-timing | --ultra-stealth | --signature</p>
+      </div>
+      <div class="spec-item">
+        <h4>Signature Options</h4>
+        <p>--signature linux | --signature windows | --no-signature</p>
+      </div>
+      <div class="spec-item">
+        <h4>Key Generation</h4>
+        <p>--size 16/32/64 | --format binary/hex/base64</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 60px;">
+      <div class="section-header">
+        <h2>Makefile Operations</h2>
+        <p>Quick operational targets and specialized builds</p>
+      </div>
+
+      <div class="specs-grid">
+        <div class="spec-item">
+          <h4>Standard Builds</h4>
+          <p>build | build-all | build-stealth | build-compressed</p>
+        </div>
+        <div class="spec-item">
+          <h4>Evasion Modes</h4>
+          <p>ultra-stealth | ghost-mode | human-mimic | natural-test</p>
+        </div>
+        <div class="spec-item">
+          <h4>Testing Suite</h4>
+          <p>crypto-tests | crypto-demo | test</p>
+        </div>
+        <div class="spec-item">
+          <h4>Specialized Builds</h4>
+          <p>build-minimal | build-embedded | build-ultimate</p>
+        </div>
+        <div class="spec-item">
+          <h4>Cross-Platform</h4>
+          <p>Linux AMD64/ARM64 | macOS Intel/Apple Silicon | Windows x64</p>
+        </div>
+        <div class="spec-item">
+          <h4>Quick Launcher</h4>
+          <p>p007 script | Auto-sudo | Command shortcuts</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USAGE SECTION -->
+<section id="usage" class="section features">
+  <div class="container">
+    <div class="section-header">
+      <h2>Usage Examples</h2>
+      <p>Practical implementation examples for common scenarios</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature">
+        <h3>Basic Encrypted Communication</h3>
+        <p><code>sudo ./build/ping-007 basic -t 192.168.1.100 -p "secret123" -d "data"</code><br>
+        <code>sudo ./build/ping-007 listen -p "secret123" -o ./received</code></p>
+      </div>
+      <div class="feature">
+        <h3>Keyfile Authentication</h3>
+        <p><code>./build/ping-007 keygen -o team.key --format binary</code><br>
+        <code>sudo ./build/ping-007 basic -t target --keyfile team.key -d "mission"</code></p>
+      </div>
+      <div class="feature">
+        <h3>Ultra-Stealth Operations</h3>
+        <p><code>make ultra-stealth TARGET=192.168.1.100 PASSWORD='ops2024'</code><br>
+        <code>make ghost-mode TARGET=victim.corp PASSWORD='stealth'</code></p>
+      </div>
+      <div class="feature">
+        <h3>Advanced Evasion</h3>
+        <p><code>sudo ./build/ping-007 basic --signature windows --human-timing --delay 10s</code><br>
+        <code>./p007 ghost -t target.local -p "research"</code></p>
+      </div>
+      <div class="feature">
+        <h3>Cross-Platform Builds</h3>
+        <p><code>make build-all</code> # All 5 platforms<br>
+        <code>make build-stealth</code> # Obfuscated with Garble</p>
+      </div>
+      <div class="feature">
+        <h3>Testing & Validation</h3>
+        <p><code>make crypto-tests</code> # Security validation<br>
+        <code>make crypto-demo</code> # Interactive demonstration</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSION SECTION -->
+<section id="mission" class="section features">
+  <div class="container">
+    <div class="mission-content">
+      <h2>Professional Applications</h2>
+      <p>
+        Enterprise-grade framework designed for authorized penetration testing, red team operations,
+        security research, and defensive assessment. Features comprehensive build system with
+        cross-platform compilation, specialized stealth targets, and organized documentation
+        structure. Suitable for academic research, professional security teams, and authorized
+        security assessment operations in enterprise environments.
+      </p>
+      <div class="mission-buttons">
+        <a href="guides/" class="btn btn-primary">
+          <span>Operation Manual</span>
+        </a>
+        <a href="references/" class="btn btn-secondary">
+          <span>Quick Reference</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="content">
+      <div class="branding">
+        <div class="crest">P</div>
+        <div class="info">PING-007 v2.0 // Professional ICMP Communication Framework</div>
+      </div>
+      <div class="links">
+        <a href="https://github.com/franckferman/ping-007">GitHub</a>
+        <a href="ARCHITECTURE.md">Documentation</a>
+        <a href="../TODO.md">Roadmap</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

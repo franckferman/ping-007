@@ -1,0 +1,71 @@
+# Test builds on push and PR
+name: Build Test
+
+on:
+  push:
+    branches: [ "stable", "dev" ]
+  pull_request:
+    branches: [ "stable", "dev" ]
+
+jobs:
+  build:
+    name: Build Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.21', '1.22']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Build
+        run: go build -v -o ping-007-test ./cmd/ping-007/
+
+      - name: Test binary
+        run: ./ping-007-test --version || echo "Binary created successfully"
+
+      - name: Run tests
+        run: go test -v ./...
+
+  cross-platform:
+    name: Cross Platform Build Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            name: ping-007-linux-amd64
+          - goos: windows
+            goarch: amd64
+            name: ping-007-windows-amd64.exe
+          - goos: darwin
+            goarch: amd64
+            name: ping-007-darwin-amd64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -v -ldflags="-s -w" -o ${{ matrix.name }} ./cmd/ping-007/

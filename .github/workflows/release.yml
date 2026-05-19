@@ -1,0 +1,149 @@
+# Build and release PING-007 binaries
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            name: ping-007-linux-amd64
+          - goos: linux
+            goarch: arm64
+            name: ping-007-linux-arm64
+          - goos: windows
+            goarch: amd64
+            name: ping-007-windows-amd64.exe
+          - goos: darwin
+            goarch: amd64
+            name: ping-007-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            name: ping-007-darwin-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -v \
+            -ldflags="-s -w -X main.version=${{ steps.get_version.outputs.VERSION }} -X main.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.commit=${{ github.sha }}" \
+            -o ${{ matrix.name }} \
+            ./cmd/ping-007/
+
+      - name: Compress binary (Unix)
+        if: matrix.goos != 'windows'
+        run: tar -czf ${{ matrix.name }}.tar.gz ${{ matrix.name }}
+
+      - name: Compress binary (Windows)
+        if: matrix.goos == 'windows'
+        run: zip ${{ matrix.name }}.zip ${{ matrix.name }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            *.tar.gz
+            *.zip
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_NUM=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Generate checksums
+        run: |
+          sha256sum *.tar.gz *.zip > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: "PING-007 ${{ steps.get_version.outputs.VERSION }}"
+          body: |
+            ## PING-007 Framework ${{ steps.get_version.outputs.VERSION }}
+
+            Professional ICMP covert channel framework for offensive security operations.
+
+            ### Features
+            - Perfect Linux ping mimicry with stealth operations
+            - Multi-layer encryption (AES256-GCM, ChaCha20, Custom XOR)
+            - Advanced security assessment simulation capabilities
+            - Anti-sandbox detection and evasion techniques
+            - Cross-platform support
+
+            ### Downloads
+            Choose the appropriate binary for your platform:
+
+            - **Linux x64**: `ping-007-linux-amd64.tar.gz`
+            - **Linux ARM64**: `ping-007-linux-arm64.tar.gz`
+            - **Windows x64**: `ping-007-windows-amd64.exe.zip`
+            - **macOS x64**: `ping-007-darwin-amd64.tar.gz`
+            - **macOS ARM64**: `ping-007-darwin-arm64.tar.gz`
+
+            ### Installation
+            ```bash
+            # Linux/macOS
+            tar -xzf ping-007-linux-amd64.tar.gz
+            sudo mv ping-007-linux-amd64 /usr/local/bin/ping-007
+            sudo chmod +x /usr/local/bin/ping-007
+
+            # Verify installation
+            ping-007 --version
+            ```
+
+            ### Security Notice
+            This software is intended for authorized security testing and educational purposes only.
+            Users are solely responsible for compliance with applicable laws and regulations.
+
+            **Verify checksums**: See `checksums.txt` for SHA256 hashes of all binaries.
+          files: |
+            *.tar.gz
+            *.zip
+            checksums.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true

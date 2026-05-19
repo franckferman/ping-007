@@ -1,0 +1,60 @@
+#!/bin/bash
+# PING-007 Quick Launcher
+# Usage: ./p007 [basic|stealth|listen] [OPTIONS]
+
+BINARY="./build/ping-007"
+
+if [ ! -f "$BINARY" ]; then
+    echo "Error: Binary not found. Run 'make build' first."
+    exit 1
+fi
+
+if [ "$EUID" -ne 0 ]; then
+    echo "Notice: Requires sudo privileges. Relaunching with sudo..."
+    exec sudo "$0" "$@"
+fi
+
+case "$1" in
+    "basic"|"b")
+        shift
+        exec $BINARY basic "$@"
+        ;;
+    "stealth"|"s")
+        shift
+        exec $BINARY stealth "$@"
+        ;;
+    "listen"|"l")
+        shift
+        exec $BINARY listen "$@"
+        ;;
+    "ultra"|"u")
+        shift
+        exec $BINARY basic --ultra-stealth "$@"
+        ;;
+    "ghost"|"g")
+        shift
+        exec $BINARY basic --signature windows --delay "$(echo $((RANDOM % 20 + 10)))s" --stealth "$@"
+        ;;
+    "help"|"--help"|"-h")
+        echo "PING-007 Quick Launcher"
+        echo "Usage: ./p007 [COMMAND] [OPTIONS]"
+        echo ""
+        echo "Commands:"
+        echo "  basic, b    - Basic transmission"
+        echo "  stealth, s  - Stealth transmission"
+        echo "  listen, l   - Listener mode"
+        echo "  ultra, u    - Ultra-stealth mode"
+        echo "  ghost, g    - Ghost mode (10-30s delays)"
+        echo ""
+        echo "Examples:"
+        echo "  ./p007 basic -t 192.168.1.100 -p 'secret123' -d 'test'"
+        echo "  ./p007 ultra -t test-system.example -p 'assessment2024'"
+        echo "  ./p007 ghost -t target-environment.local -p 'research'"
+        echo "  ./p007 listen -o ./output -p 'key123'"
+        ;;
+    *)
+        echo "Error: Unknown command: $1"
+        echo "Use: ./p007 help for usage"
+        exit 1
+        ;;
+esac

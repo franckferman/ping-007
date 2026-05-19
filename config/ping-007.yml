@@ -1,0 +1,175 @@
+# PING-007 Framework Configuration
+# Professional ICMP stealth configuration for SOC operations
+
+framework:
+  name: "PING-007"
+  version: "2.0.0"
+  environment: "production"  # development, staging, production, testing
+  debug_mode: false
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+network:
+  # === SCENARIO 1: Local testing only (current config) ===
+  authorized_targets:
+    - "192.168.0.0/16"    # Local network
+    - "10.0.0.0/8"        # Private class A
+    - "172.16.0.0/12"     # Private class B
+    - "203.0.113.0/24"    # RFC 5737 test range
+
+  # === SCENARIO 2: Internal network only (enterprise pentest) ===
+  # authorized_targets:
+  #   - "10.50.0.0/16"      # Target client's internal subnet
+  #   - "192.168.100.0/24"  # DMZ network
+  #   - "172.20.0.0/16"     # Server farm
+
+  # === SCENARIO 3: Specific external IP (your C2 server) ===
+  # authorized_targets:
+  #   - "192.168.0.0/16"    # Internal targets
+  #   - "45.33.32.156/32"   # Your VPS for exfiltration
+  #   - "203.0.113.0/24"    # Test range
+
+  # === SCENARIO 4: Multiple external servers (red team) ===
+  # authorized_targets:
+  #   - "10.0.0.0/8"        # Internal network
+  #   - "45.33.32.156/32"   # Primary C2 server
+  #   - "167.99.80.100/32"  # Backup C2 server
+  #   - "185.199.108.0/24"  # Your cloud IP range
+
+  # === SCENARIO 5: Wide external access (careful!) ===
+  # authorized_targets:
+  #   - "192.168.0.0/16"    # Internal
+  #   - "8.8.8.8/32"        # Google DNS (test connectivity)
+  #   - "1.1.1.1/32"        # Cloudflare DNS
+  #   - "203.0.113.0/24"    # Test range
+  #   # Note: Add only specific IPs you control!
+
+  # === SCENARIO 6: Full Internet access (NOT RECOMMENDED!) ===
+  # WARNING: This allows targeting ANY IP on the Internet!
+  # Only use in isolated lab environments or with explicit authorization
+  # Risk: Accidental attacks on production systems, legal issues
+  # authorized_targets:
+  #   - "0.0.0.0/0"         # ENTIRE INTERNET - Use with extreme caution!
+  # forbidden_targets:      # At minimum, block these even with 0.0.0.0/0
+  #   - "127.0.0.0/8"       # Localhost
+  #   - "169.254.0.0/16"    # Link-local
+  #   - "224.0.0.0/4"       # Multicast
+  #   # Consider adding: government/military ranges, critical infrastructure
+
+  # Forbidden IP ranges (never target these)
+  forbidden_targets:
+    - "0.0.0.0/8"       # Invalid addresses
+    - "127.0.0.0/8"     # Localhost
+    - "169.254.0.0/16"  # Link-local
+    - "224.0.0.0/4"     # Multicast
+    - "240.0.0.0/4"     # Reserved
+
+  default_interface: "eth0"
+  timeout: 30
+  max_packet_size: 1500
+
+evasion:
+  # Crypto-agility configuration
+  crypto_agility:
+    enabled: true
+    algorithms:
+      - "aes256"
+      - "chacha20"
+      - "custom_xor"
+    rotation_interval: 3600  # seconds
+    default_algorithm: "aes256"
+
+  # Anti-sandbox detection
+  anti_sandbox:
+    enabled: true
+    strict_mode: true
+    checks:
+      - "uptime"
+      - "processes"
+      - "resources"
+      - "activity"
+    min_uptime: 1800  # 30 minutes
+    min_processes: 50
+
+  # Timing evasion
+  timing_evasion:
+    enabled: true
+    adaptive_delays: true
+    service_mimicry:
+      - "windows_update"
+      - "ntp_sync"
+      - "antivirus"
+      - "dns_query"
+      - "background_task"
+    jitter_percentage: 0.15
+
+  # Traffic analysis resistance
+  traffic_analysis_resistance: true
+  padding_sizes:
+    - 32
+    - 48
+    - 64
+    - 128
+    - 256
+    - 512
+  fake_data_injection_rate: 0.3
+
+# APT group behavioral profiles
+apt_profiles:
+  lazarus:
+    description: "Lazarus Group (North Korea)"
+    timing_range: [300, 3600]  # 5min - 1hour
+    size_range: [64, 1024]
+    crypto_preference: "aes256"
+    sophistication: "high"
+
+  apt29:
+    description: "Cozy Bear (Russia)"
+    timing_range: [1800, 7200]  # 30min - 2hours
+    size_range: [32, 512]
+    crypto_preference: "chacha20"
+    sophistication: "very_high"
+
+  apt28:
+    description: "Fancy Bear (Russia)"
+    timing_range: [600, 1800]  # 10min - 30min
+    size_range: [128, 2048]
+    crypto_preference: "custom_xor"
+    sophistication: "high"
+
+  equation:
+    description: "Equation Group (NSA)"
+    timing_range: [86400, 259200]  # 1day - 3days
+    size_range: [16, 64]
+    crypto_preference: "rsa_hybrid"
+    sophistication: "nation_state"
+
+# SIEM integration configuration
+siem:
+  enabled: false  # Set to true to enable SIEM integration
+  connector_type: "splunk"  # splunk, elastic, qradar, sentinel
+  endpoint: ""  # SIEM endpoint URL
+  index: "network_security"
+  sourcetype: "ping-007:icmp"
+  api_token: null  # Set your SIEM API token
+
+  real_time_alerting: true
+  alert_thresholds:
+    entropy: 0.7
+    frequency: 100
+    size: 512
+
+# Security and compliance
+security:
+  audit_logging: true
+  data_retention_days: 90
+  encryption_at_rest: true
+  # ICMP shell session timeout (seconds) - auto-close inactive C2 sessions
+  session_timeout: 3600  # 1 hour
+
+# Reporting (future feature - not implemented yet)
+# reporting:
+#   enabled: false
+#   output_dir: "reports"
+#   formats: ["json", "html"]
+#   dashboard_enabled: false
+#   dashboard_port: 8080
