@@ -1,0 +1,117 @@
+# PING-007 Framework .gitignore
+
+# Binaries (Go)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+coverage.out
+
+# Build artifacts
+/build/
+/dist/
+# Ignore binaries but not source directories
+ping-007
+!/cmd/ping-007/
+ping-007-linux-*
+ping-007-windows-*
+ping-007-darwin-*
+ping-007-*.exe
+ping-007-*.tar.gz
+ping-007-*.zip
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Go modules download cache
+/vendor/
+
+# Dependency directories
+node_modules/
+
+# Logs and temporary files
+*.log
+/logs/
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation artifacts
+DOCS.md
+*.old
+*.backup
+*.bak
+
+# Framework specific
+/received/
+/reports/
+/loot/
+/captures/
+/output/
+/archive/
+benchmark.out
+
+# Config files with credentials
+config/**/secrets.yml
+config/**/*.key
+config/**/*.pem
+*.env
+.env.*
+
+# Temporary make files
+Makefile.old
+Makefile.backup
+
+# UPX backups
+*.upx.bak
+
+# Test data
+test_data/
+testdata/
+mock_*
+dummy_*
+
+# Compressed archives
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificate files
+*.crt
+*.cer
+*.p12
+*.pfx
