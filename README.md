@@ -180,7 +180,8 @@ Available profiles: `lazarus` (5min–1hr delays), `apt29` (30min–2hr), `apt28
 | `-p, --password` | — | Shared password for AES-256-GCM + PBKDF2 key derivation |
 | `-v, --verbose` | false | Verbose logging |
 | `--no-banner` | false | Suppress startup banner and JSON logs |
-| `-c, --config` | — | Config file path |
+| `-c, --config` | — | Config file path (default: `./config/ping-007.yml`) |
+| `--allow-all-targets` | false | Bypass `authorized_targets` / `forbidden_targets` CIDR validation — use in lab or red team ops where the config whitelist would block the actual target |
 
 ### `basic`
 | Flag | Default | Description |
