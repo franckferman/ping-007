@@ -1,0 +1,152 @@
+# Build and release PING-007 binaries
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            name: ping-007-linux-amd64
+          - goos: linux
+            goarch: arm64
+            name: ping-007-linux-arm64
+          - goos: windows
+            goarch: amd64
+            name: ping-007-windows-amd64.exe
+          - goos: darwin
+            goarch: amd64
+            name: ping-007-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            name: ping-007-darwin-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          check-latest: true
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -v \
+            -ldflags="-s -w -X main.version=${{ steps.get_version.outputs.VERSION }} -X main.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.commit=${{ github.sha }}" \
+            -o ${{ matrix.name }} \
+            ./cmd/ping-007/
+
+      - name: Compress binary (Unix)
+        if: matrix.goos != 'windows'
+        run: tar -czf ${{ matrix.name }}.tar.gz ${{ matrix.name }}
+
+      - name: Compress binary (Windows)
+        if: matrix.goos == 'windows'
+        run: zip ${{ matrix.name }}.zip ${{ matrix.name }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            *.tar.gz
+            *.zip
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_NUM=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Generate checksums
+        run: |
+          sha256sum *.tar.gz *.zip > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: "PING-007 ${{ steps.get_version.outputs.VERSION }}"
+          body: |
+            ## PING-007 ${{ steps.get_version.outputs.VERSION }}
+
+            Encrypted data inside packets byte-for-byte identical to a real OS `ping` — covert ICMP framework for file exfiltration, bidirectional shell, and APT simulation.
+
+            Every packet matches the exact payload structure, size, TTL, ICMP ID, and sequence start of a genuine Linux or Windows ping. Traffic is structurally indistinguishable from normal network diagnostics regardless of whether the observer has the key.
+
+            ### What's included
+            - OS signature mimicry: exact Linux 64B (`ping -s 56`) and Windows 40B format
+            - Three AEAD algorithms with per-session rotation: AES-256-GCM, ChaCha20-Poly1305, XOR-CFB-HMAC
+            - PBKDF2-SHA256 (100 000 iterations) key derivation — no key material in the binary
+            - File exfiltration: steganographic fragmentation across N×64B pings, each indistinguishable from `ping -c 1`
+            - Bidirectional C2 shell over ICMP
+            - APT timing profiles: Lazarus (5 min–1 hr), APT29 (30 min–2 hr), APT28 (10–30 min), Equation Group (1–3 days)
+            - Sandbox detection, decoy pings, human timing, shell jitter
+            - Build variants: standard / no-c2 / stealth / ghost / compressed / armored / all-platforms
+            - 250 tests, `-race` clean
+
+            ### Downloads
+
+            | Platform | Archive |
+            |----------|---------|
+            | Linux x64 | `ping-007-linux-amd64.tar.gz` |
+            | Linux ARM64 | `ping-007-linux-arm64.tar.gz` |
+            | Windows x64 | `ping-007-windows-amd64.exe.zip` |
+            | macOS x64 | `ping-007-darwin-amd64.tar.gz` |
+            | macOS ARM64 | `ping-007-darwin-arm64.tar.gz` |
+
+            ```bash
+            # Linux / macOS
+            tar -xzf ping-007-linux-amd64.tar.gz
+            sudo ./ping-007-linux-amd64 --help
+
+            # Verify
+            sha256sum -c checksums.txt
+            ```
+
+            Requires `CAP_NET_RAW` (Linux/macOS) or Administrator (Windows) for raw socket operations.
+
+            > **Authorized use only.** Deploy against systems you own or have explicit written permission to test.
+          files: |
+            *.tar.gz
+            *.zip
+            checksums.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true

