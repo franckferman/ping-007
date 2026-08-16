@@ -3,7 +3,7 @@
 
 # Project information
 PROJECT_NAME := ping-007
-VERSION := 2.1.0
+VERSION := 3.0.0
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
