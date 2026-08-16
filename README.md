@@ -1,8 +1,8 @@
 <div align="center">
 
 <h1>PING-007</h1>
-<p><em>Covert ICMP C2 framework - encrypted data inside standard OS ping packets.</em><br>
-Post-exploitation exfil and C2 shell over ICMP. OS signature mimicry, configurable timing profiles.</p>
+<p><em>Encrypted data inside packets byte-for-byte identical to a real OS ping.</em><br>
+Covert ICMP framework — file exfiltration, C2 shell, APT timing profiles, OS signature mimicry.</p>
 
 </div>
 

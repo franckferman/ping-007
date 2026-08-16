@@ -106,7 +106,7 @@ jobs:
           body: |
             ## PING-007 ${{ steps.get_version.outputs.VERSION }}
 
-            Covert ICMP C2 framework — encrypted data inside packets byte-for-byte identical to a real OS `ping`.
+            Encrypted data inside packets byte-for-byte identical to a real OS `ping` — covert ICMP framework for file exfiltration, bidirectional shell, and APT simulation.
 
             Every packet matches the exact payload structure, size, TTL, ICMP ID, and sequence start of a genuine Linux or Windows ping. Traffic is structurally indistinguishable from normal network diagnostics regardless of whether the observer has the key.
 
