@@ -160,17 +160,17 @@ netsh advfirewall firewall delete rule name="ICMP Allow"
 
 | Profile | Payload size | Stealth capacity | Frag capacity | Pattern | TTL |
 |---------|-------------|-----------------|---------------|---------|-----|
-| `linux` (default) | 64 bytes | 46 bytes/pkt | 42 bytes/frag | Sequential `0x08,0x09,…` | 64 |
+| `linux` (default) | 64 bytes | 38 bytes/pkt | 34 bytes/frag | `[16B timeval][0x10,0x11,…0x37]` | 64 |
 | `windows` | 40 bytes | 22 bytes/pkt | 18 bytes/frag | Alphabetic `abcdefgh…` | 128 |
 | `none` / `--no-signature` | Variable | N/A | N/A | Raw bytes | kernel default |
 
-**Stealth capacity arithmetic (Linux):**
+**Stealth capacity arithmetic (Linux, 64-bit):**
 - ICMP payload = 56 bytes (`ping -s 56`)
-- 8 bytes = timeval struct
-- 2 bytes = length prefix (XOR'd into sequential pattern)
-- **46 bytes** free for hidden data per single packet
+- 16 bytes = `struct timeval` (iputils on 64-bit Linux: `uint64 tv_sec` + `uint64 tv_usec`)
+- 2 bytes = length prefix (XOR'd into sequential pattern starting at `0x10`)
+- **38 bytes** free for hidden data per single packet
 - AES-256-GCM overhead = 32 bytes (4B header + 12B nonce + 16B tag)
-- Max single-packet plaintext = 14 bytes; above that, auto-fragmentation kicks in
+- Max single-packet plaintext = 6 bytes; above that, auto-fragmentation kicks in
 
 For large payloads, data is split into N separate 64-byte ICMP echo requests with a 4-byte embedded header `[0xA7 magic][session][frag_id][total_frags]` XOR'd into the payload pattern.
 
@@ -183,8 +183,8 @@ For large payloads, data is split into N separate 64-byte ICMP echo requests wit
 | **TTL** | `setsockopt(IP_TTL)` - 64 (Linux) / 128 (Windows) | OS fingerprinting via TTL |
 | **Payload size** | Always 64B (Linux) / 40B (Windows) - identical to `ping -s 56` | Oversized ICMP payload detection |
 | **Payload pattern** | XOR steganography into real OS ping pattern | Pattern mismatch vs. known ping tools |
-| **Sequence number** | `crypto/rand` random start per session | "Sequence starts at 1" heuristic |
-| **ICMP Identifier** | `crypto/rand` random 16-bit per session | Fixed identifier = long-running process |
+| **Sequence number** | Starts at 1, increments per packet (matches iputils `ping` behaviour) | "Sequence starts at 1" heuristic — previously detectable as random start |
+| **ICMP Identifier** | `getpid() & 0xFFFF` on Linux (PID of the ping-007 process); `0x0001` on Windows (Vista+ kernel value) — override with `--icmp-id <value\|random>` | Fixed arbitrary ID — now matches real OS ping behaviour |
 | **Fragmentation** | Large payloads → N×64B pings with embedded frag header | Oversized single-packet detection |
 | **Timing** | 1s ± 10% jitter between packets | Fixed-interval Netflow detection |
 | **Session blending** | `--decoy-pings` / `--after-pings` (clean OS pings before and after) | ICMP volume anomaly on NDR/Zeek |
@@ -223,7 +223,9 @@ Enterprise DLP solutions (Symantec DLP, Forcepoint, Microsoft Purview) operate a
 | ICMP type | 8 | 8 | 8 | 8 |
 | Total size | 64 bytes | 40 bytes | **64 bytes** | **40 bytes** |
 | TTL | 64 | 128 | **64** | **128** |
-| Payload structure | `[8B timeval][0x08,0x09…]` | `abcdefgh…` | **same, XOR'd** | **same, XOR'd** |
+| ICMP Identifier | `getpid() & 0xFFFF` | `0x0001` (Vista+, kernel) | **`getpid() & 0xFFFF`** | **`0x0001`** |
+| Sequence start | 1, +1 per packet | arbitrary (boot counter) | **1, +1 per packet** | **1, +1 per packet** |
+| Payload structure | `[16B timeval][0x10,0x11…]` | `abcdefgh…` (23-char cycle) | **same, XOR'd at byte 16** | **same, XOR'd at byte 8** |
 
 Even if a sensor decodes the ICMP payload, it finds `[4B header][12B nonce][ciphertext][16B tag]` - pure random-looking bytes. No PII patterns, no file headers, no regex match possible.
 
@@ -283,7 +285,7 @@ Both AES keys were hardcoded in the binary and recovered by Unit42, making all h
 | **Packet size** | Fixed 788B | Oversized blob | **Exact OS size: 64B / 40B** |
 | **Payload** | Plaintext struct | `[8B prefix]R[n].[PROJECT_…]\r\n` | **XOR'd into real OS pattern** |
 | **TTL** | Kernel default | Kernel default | **`setsockopt`: 64 / 128** |
-| **Sequence numbers** | Fixed {1234,1235,1236} | Incremental from 0 | **`crypto/rand` random start** |
+| **Sequence numbers** | Fixed {1234,1235,1236} | Incremental from 0 | **Starts at 1, +1 per packet — identical to OS ping** |
 | **Encryption** | None | AES-256-CBC, **hardcoded keys** | PBKDF2 + AES-256-GCM, **no key in binary** |
 | **Detectable by size?** | Yes - `dsize:788` | Yes | **No** |
 | **Binary reversing?** | N/A | Yes - keys recoverable | **No** |

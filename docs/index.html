@@ -584,6 +584,7 @@ footer {
           <tr><td>basic</td><td><code style="font-family:var(--mono)">--decoy-pings</code></td><td>0</td><td>Send N clean OS-pattern pings before data to blend into traffic</td></tr>
           <tr><td>basic</td><td><code style="font-family:var(--mono)">--after-pings</code></td><td>0</td><td>Send N clean pings after data to close session naturally</td></tr>
           <tr><td>basic</td><td><code style="font-family:var(--mono)">--ping-interval</code></td><td>1s</td><td>Interval between pings in a sequence (mirrors real <code style="font-family:var(--mono)">ping</code>)</td></tr>
+          <tr><td>basic</td><td><code style="font-family:var(--mono)">--icmp-id</code></td><td>os</td><td>ICMP identifier override: <code style="font-family:var(--mono)">os</code> (PID on Linux / 0x0001 on Windows), <code style="font-family:var(--mono)">random</code>, or a numeric 0–65535 value</td></tr>
           <tr><td>basic</td><td><code style="font-family:var(--mono)">--no-encrypt</code></td><td>false</td><td>Send plaintext — no encryption, no encoding (raw bytes in ICMP)</td></tr>
           <tr><td>basic</td><td><code style="font-family:var(--mono)">--encode</code></td><td>false</td><td>Base64-encode payload only (lower entropy than AES, no confidentiality)</td></tr>
           <tr><td>exfil</td><td><code style="font-family:var(--mono)">-f / --file</code></td><td>required</td><td>File to exfiltrate</td></tr>
@@ -591,6 +592,7 @@ footer {
           <tr><td>exfil</td><td><code style="font-family:var(--mono)">--chunk-size</code></td><td>512</td><td>Base chunk size in bytes (±25% jitter applied per chunk)</td></tr>
           <tr><td>exfil</td><td><code style="font-family:var(--mono)">--no-encrypt</code></td><td>false</td><td>Plaintext payload (no crypto)</td></tr>
           <tr><td>exfil</td><td><code style="font-family:var(--mono)">--signature</code></td><td>linux</td><td>OS signature for TTL mimicry: <code style="font-family:var(--mono)">linux</code> (TTL=64), <code style="font-family:var(--mono)">windows</code> (TTL=128), <code style="font-family:var(--mono)">none</code></td></tr>
+          <tr><td>exfil</td><td><code style="font-family:var(--mono)">--icmp-id</code></td><td>os</td><td>ICMP identifier override: <code style="font-family:var(--mono)">os</code> (PID on Linux / 0x0001 on Windows), <code style="font-family:var(--mono)">random</code>, or a numeric 0–65535 value</td></tr>
           <tr><td>shell</td><td><code style="font-family:var(--mono)">--mode</code></td><td>interactive</td><td><code style="font-family:var(--mono)">interactive</code> (C2 over ICMP) or <code style="font-family:var(--mono)">batch</code> (local execution only)</td></tr>
           <tr><td>shell</td><td><code style="font-family:var(--mono)">--jitter</code></td><td>0</td><td>Max random delay before each command packet (e.g. <code style="font-family:var(--mono)">3s</code>); breaks metronomic C2 beacon detection</td></tr>
           <tr><td>listen</td><td><code style="font-family:var(--mono)">-o / --output</code></td><td>./received</td><td>Output directory for received files</td></tr>
@@ -746,13 +748,13 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
             <td style="padding:9px 14px;color:#666;">ICMP identifier</td>
             <td style="padding:9px 14px;color:#c0392b;">PID or static constant</td>
             <td style="padding:9px 14px;color:#e67e22;">Session-based constant</td>
-            <td style="padding:9px 14px;color:#27ae60;"><strong>crypto/rand 16-bit per session</strong></td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>getpid() &amp; 0xFFFF (Linux) / 0x0001 (Windows) — matches real OS</strong></td>
           </tr>
           <tr style="border-bottom:1px solid #0f0f0f;">
             <td style="padding:9px 14px;color:#666;">Sequence number</td>
             <td style="padding:9px 14px;color:#c0392b;">Starts at 0</td>
             <td style="padding:9px 14px;color:#e67e22;">Counter from 0</td>
-            <td style="padding:9px 14px;color:#27ae60;"><strong>crypto/rand random start</strong></td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>Starts at 1, +1 per packet — matches real OS ping</strong></td>
           </tr>
           <tr style="border-bottom:1px solid #0f0f0f;">
             <td style="padding:9px 14px;color:#666;">Timing</td>
@@ -863,13 +865,13 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
             <td style="padding:9px 14px;color:#666;">Sequence numbers</td>
             <td style="padding:9px 14px;color:#c0392b;"><strong>{1234, 1235, 1236}</strong> — always</td>
             <td style="padding:9px 14px;color:#e67e22;">Incremental from 0</td>
-            <td style="padding:9px 14px;color:#27ae60;"><strong>crypto/rand start per session</strong></td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>Starts at 1, +1 per packet — identical to OS ping</strong></td>
           </tr>
           <tr style="border-bottom:1px solid #0f0f0f;">
             <td style="padding:9px 14px;color:#666;">ICMP identifier</td>
             <td style="padding:9px 14px;color:#c0392b;">Not randomized</td>
             <td style="padding:9px 14px;color:#e67e22;">Constant per session</td>
-            <td style="padding:9px 14px;color:#27ae60;"><strong>crypto/rand 16-bit per session</strong></td>
+            <td style="padding:9px 14px;color:#27ae60;"><strong>getpid() &amp; 0xFFFF (Linux) / 0x0001 (Windows) — matches real OS</strong></td>
           </tr>
           <tr style="border-bottom:1px solid #0f0f0f;">
             <td style="padding:9px 14px;color:#666;">Encryption</td>
@@ -893,7 +895,7 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
             <td style="padding:9px 14px;color:#666;">Minimal catch rule</td>
             <td style="padding:9px 14px;color:#c0392b;"><code>itype:8; dsize:788;</code></td>
             <td style="padding:9px 14px;color:#e67e22;"><code>content:"PROJECT_";</code></td>
-            <td style="padding:9px 14px;color:#27ae60;"><em>No static indicator — random size, seq, id, pattern</em></td>
+            <td style="padding:9px 14px;color:#27ae60;"><em>No static indicator — OS-native id+seq, XOR'd OS pattern, variable size</em></td>
           </tr>
         </tbody>
       </table>
@@ -902,7 +904,7 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
       <div style="font-family:var(--mono);font-size:10px;color:#27ae60;letter-spacing:1px;margin-bottom:10px;">PING-007 DESIGN RESPONSE TO EACH FAILURE MODE</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-family:var(--mono);font-size:10px;color:#555;line-height:1.9;">
         <div><span style="color:#27ae60;">→ 788B anomaly</span><br>Sends exact OS size (64B/40B).<br>No size-based rule applies.</div>
-        <div><span style="color:#27ae60;">→ Fixed seq {1234,1235,1236}</span><br>crypto/rand start per session.<br>Looks like mid-stream ping.</div>
+        <div><span style="color:#27ae60;">→ Fixed seq {1234,1235,1236}</span><br>Starts at 1, +1 per packet.<br>Matches OS ping behavior.</div>
         <div><span style="color:#27ae60;">→ Hardcoded AES key</span><br>PBKDF2 at runtime. Binary<br>contains zero key material.</div>
         <div><span style="color:#27ae60;">→ Plaintext in payload</span><br>XOR steganography into real<br>OS pattern. No regex match.</div>
         <div><span style="color:#27ae60;">→ PROJECT_HOST_IP leak</span><br>Nothing in payload without key.<br>Looks like normal ping noise.</div>
@@ -919,9 +921,9 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
           Total size: <span style="color:var(--silver)">64 bytes</span><br>
           TTL: <span style="color:var(--silver)">64</span><br>
           Payload: <span style="color:var(--silver)">56 bytes</span><br>
-          Structure: <span style="color:var(--silver)">[8B timeval LE][48B sequential 0x08,0x09…]</span><br>
-          Data zone: <span style="color:var(--gold)">XOR'd into bytes [8:54] · 46B max single-pkt</span><br>
-          Frag capacity: <span style="color:var(--gold)">42B/pkt (4B frag header embedded)</span>
+          Structure: <span style="color:var(--silver)">[16B timeval LE][40B sequential 0x10,0x11…]</span><br>
+          Data zone: <span style="color:var(--gold)">XOR'd into bytes [16:54] · 38B max single-pkt</span><br>
+          Frag capacity: <span style="color:var(--gold)">34B/pkt (4B frag header embedded)</span>
         </div>
       </div>
       <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:20px;">
@@ -940,7 +942,7 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
     <div class="grid-3" style="margin-bottom:48px;">
       <div class="feat">
         <h3>OS payload mimicry</h3>
-        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">Linux: 56-byte, 0x08,0x09,…<br>Windows: 32-byte, abcdefgh…<br>Data XOR'd into real pattern<br>Always 64/40 bytes on the wire</p>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">Linux: 56-byte, 0x10,0x11,…<br>Windows: 32-byte, abcdefgh…<br>Data XOR'd into real pattern<br>Always 64/40 bytes on the wire</p>
       </div>
       <div class="feat">
         <h3>Multi-packet reassembly</h3>
@@ -948,7 +950,7 @@ key = <span class="out">PBKDF2</span>(SHA-256, password, salt_per_algo, iteratio
       </div>
       <div class="feat">
         <h3>TTL + identifier spoofing</h3>
-        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">TTL: 64 (Linux) / 128 (Windows)<br>ICMP ID: crypto/rand per session<br>Seq: crypto/rand start<br>Breaks OS fingerprinting</p>
+        <p style="font-family:var(--mono);font-size:12px;color:var(--silver);">TTL: 64 (Linux) / 128 (Windows)<br>ICMP ID: getpid() (Linux) / 0x0001 (Windows)<br>Seq: starts at 1, +1 per packet<br>Identical to real OS ping</p>
       </div>
       <div class="feat">
         <h3>Human timing simulation</h3>

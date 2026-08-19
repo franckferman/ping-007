@@ -4,8 +4,15 @@ package network
 
 import (
 	"fmt"
+	"os"
 	"syscall"
 )
+
+// icmpIDFromOS returns the ICMP identifier matching Linux iputils ping behaviour:
+// getpid() & 0xFFFF — the kernel exposes the raw socket's PID as the identifier.
+func icmpIDFromOS() uint16 {
+	return uint16(os.Getpid() & 0xFFFF)
+}
 
 // SetTTL sets the IP TTL on the raw socket via setsockopt(IP_TTL).
 func (n *NetworkService) SetTTL(ttl int) error {

@@ -43,7 +43,9 @@ Cross-compiled binaries exist. Raw socket receive path is untested on Windows.
 
 - OS signature mimicry: exact Linux (64B) and Windows (40B) packet format
 - AES-256-GCM / ChaCha20-Poly1305 / XOR-CFB-HMAC with PBKDF2-SHA256 (100k iter)
-- Per-session algorithm rotation, random nonce + ICMP ID + seq start
+- Per-session algorithm rotation, random nonce; OS-native ICMP ID (PID on Linux / 0x0001 on Windows) + seq start at 1
+- `--icmp-id` flag: override ICMP identifier (os / random / 0-65535)
+- 16B struct timeval (64-bit Linux) + payload pattern starts at 0x10 — byte-identical to iputils ping
 - File exfiltration with steganographic fragmentation across N×64B pings
 - Bidirectional C2 shell over ICMP
 - APT timing profiles: Lazarus, APT29, APT28, Equation Group

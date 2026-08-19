@@ -17,21 +17,24 @@ func minOrch() *Orchestrator {
 
 // ── extractLinuxPattern ───────────────────────────────────────────────────────
 
-// buildLinuxPayload replicates the XOR encoding used by network.createLinuxPingPayload.
-// Format: payload[8] ^= hi(len), payload[9] ^= lo(len), payload[10+i] ^= data[i]
-// Sequential pattern at byte N = N (same as iputils ping).
+// buildLinuxPayload replicates the XOR encoding used by network.createLinuxPingPayload (64-bit Linux).
+// Format: bytes 0..15 = struct timeval (left zeroed for tests), bytes 16..55 = sequential 0x10..0x37.
+// Data is embedded at [16..55]: [16] ^= hi(len), [17] ^= lo(len), [18+i] ^= data[i].
 func buildLinuxPayload(data []byte) []byte {
 	payload := make([]byte, 56)
-	// Bytes 0-7: fake timeval (left at zero for test purposes)
-	// Bytes 8-55: sequential fill 0x08, 0x09, 0x0a…
-	for i := 8; i < 56; i++ {
+	// Pre-fill 0x00..0x37 (iputils pattern), then bytes 0..15 become fake timeval (zeros).
+	for i := 0; i < 56; i++ {
 		payload[i] = byte(i)
 	}
+	// Bytes 0..15: timeval (zero for test purposes)
+	for i := 0; i < 16; i++ {
+		payload[i] = 0
+	}
 	if len(data) > 0 {
-		payload[8] ^= byte(len(data) >> 8)
-		payload[9] ^= byte(len(data))
+		payload[16] ^= byte(len(data) >> 8)
+		payload[17] ^= byte(len(data))
 		for i, b := range data {
-			payload[10+i] ^= b
+			payload[18+i] ^= b
 		}
 	}
 	return payload
@@ -42,12 +45,12 @@ func TestExtractLinuxPattern_RoundTrip(t *testing.T) {
 	cases := [][]byte{
 		[]byte("hello"),
 		[]byte("ping-007 stealth"),
-		bytes.Repeat([]byte{0xFF}, 46), // max capacity
+		bytes.Repeat([]byte{0xFF}, 38), // max capacity (64-bit Linux: 40B region − 2B length)
 		{},                             // empty = decoy ping
 	}
 	for _, data := range cases {
 		payload := buildLinuxPayload(data)
-		patternData := payload[8:] // pass everything after the 8-byte timeval
+		patternData := payload[16:] // skip 16-byte timeval; embedding region starts at byte 16
 
 		got, err := o.extractLinuxPattern(patternData)
 		if err != nil {
@@ -76,9 +79,9 @@ func TestExtractLinuxPattern_TooShort(t *testing.T) {
 
 func TestExtractLinuxPattern_InvalidLength(t *testing.T) {
 	o := minOrch()
-	// Declare length 47 (> 46 max) — XOR'd with pattern bytes 0x08/0x09
-	badHi := byte(0) ^ 0x08
-	badLo := byte(47) ^ 0x09
+	// Declare length 39 (> 38 max) — XOR'd with pattern bytes 0x10/0x11 (new 64-bit offsets)
+	badHi := byte(0) ^ 0x10
+	badLo := byte(39) ^ 0x11
 	patternData := make([]byte, 48)
 	patternData[0] = badHi
 	patternData[1] = badLo
@@ -419,15 +422,15 @@ func TestGetMaxDataSize_Windows(t *testing.T) {
 }
 
 func TestGetMaxDataSize_Linux(t *testing.T) {
-	if got := getMaxDataSize("linux"); got != 46 {
-		t.Errorf("linux: got %d, want 46", got)
+	if got := getMaxDataSize("linux"); got != 38 {
+		t.Errorf("linux: got %d, want 38", got)
 	}
 }
 
 func TestGetMaxDataSize_Default(t *testing.T) {
 	for _, sig := range []string{"", "darwin", "freebsd", "unknown"} {
-		if got := getMaxDataSize(sig); got != 46 {
-			t.Errorf("getMaxDataSize(%q): got %d, want 46 (default)", sig, got)
+		if got := getMaxDataSize(sig); got != 38 {
+			t.Errorf("getMaxDataSize(%q): got %d, want 38 (default)", sig, got)
 		}
 	}
 }
@@ -466,15 +469,17 @@ func TestSetPassword_NilCryptoEngine(t *testing.T) {
 	}
 }
 
-// ── extractStealthData — empty patternData (exactly 8 bytes) ─────────────────
+// ── extractStealthData — non-standard size payload ────────────────────────────
 
-func TestExtractStealthData_EmptyPatternData(t *testing.T) {
-	// Exactly 8 bytes: passes len < 8 guard, but patternData = payload[8:] is empty.
-	// Neither the linux-56 nor the windows-32 branch is taken (len != 56, != 32),
-	// but len(patternData) == 0 fires first and returns an error.
+func TestExtractStealthData_NonStandardSize(t *testing.T) {
+	// An 8-byte payload is neither 56 (Linux) nor 32 (Windows) — returned as raw ICMP.
 	o := minOrch()
-	_, err := o.extractStealthData(make([]byte, 8))
-	if err == nil {
-		t.Error("expected error for payload with empty pattern data (exactly 8 bytes)")
+	raw := make([]byte, 8)
+	got, err := o.extractStealthData(raw)
+	if err != nil {
+		t.Fatalf("expected no error for non-standard size payload, got: %v", err)
+	}
+	if !bytes.Equal(got, raw) {
+		t.Error("non-standard payload should be returned unchanged")
 	}
 }

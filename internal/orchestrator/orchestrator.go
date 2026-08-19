@@ -318,6 +318,7 @@ type BasicOptions struct {
 	PingInterval  time.Duration // delay between pings in a sequence (default 1s like real ping)
 	NoEncrypt     bool          // send plaintext (no crypto)
 	EncodeOnly    bool          // base64-encode without encrypting
+	ICMPIDMode    string        // "os" (default), "random", or a 0-65535 decimal value
 }
 
 // Basic performs basic ICMP transmission
@@ -337,6 +338,9 @@ func (o *Orchestrator) Basic(ctx context.Context, options *BasicOptions) error {
 	if options.Interactive {
 		return o.runInteractiveBasic(ctx, options)
 	}
+
+	// Apply ICMP identifier override if requested
+	o.applyICMPID(options.ICMPIDMode)
 
 	// Set TTL to match the declared OS signature
 	if err := o.networkService.SetTTLForSignature(options.Signature); err != nil {
@@ -635,7 +639,7 @@ func getMaxDataSize(signature string) int {
 	case "linux":
 		fallthrough
 	default:
-		return 46 // 56 payload - 8 timeval - 2 length = 46 bytes
+		return 38 // 56 payload - 16 timeval (64-bit) - 2 length = 38 bytes
 	}
 }
 
@@ -733,14 +737,15 @@ func (o *Orchestrator) APT(ctx context.Context, options *APTOptions) error {
 }
 
 type ExfilOptions struct {
-	Target    string
-	File      string
-	Method    string
-	Mode      string
-	ChunkSize int
-	Stealth   bool
-	Encrypt   bool
-	Signature string // OS signature for TTL mimicry
+	Target     string
+	File       string
+	Method     string
+	Mode       string
+	ChunkSize  int
+	Stealth    bool
+	Encrypt    bool
+	Signature  string // OS signature for TTL mimicry
+	ICMPIDMode string // "os" (default), "random", or a 0-65535 decimal value
 }
 
 // Exfiltrate performs data exfiltration
@@ -755,6 +760,9 @@ func (o *Orchestrator) Exfiltrate(ctx context.Context, options *ExfilOptions) er
 	if err := o.config.ValidateTarget(options.Target); err != nil {
 		return fmt.Errorf("target validation failed: %w", err)
 	}
+
+	// Apply ICMP identifier override if requested
+	o.applyICMPID(options.ICMPIDMode)
 
 	// Set TTL to match OS signature
 	if options.Signature != "" {
@@ -1240,25 +1248,23 @@ func (o *Orchestrator) analyzeForFrameworkTraffic(packet *types.NetworkPacket) b
 	return false
 }
 
-// isLegitimateLinuxPing checks if payload matches Linux ping pattern
+// isLegitimateLinuxPing checks if payload matches Linux ping pattern (64-bit, 56-byte payload).
 func (o *Orchestrator) isLegitimateLinuxPing(payload []byte) bool {
 	if len(payload) != 56 {
-		return false // Linux ping uses 56-byte payload
+		return false
 	}
 
-	// Check if bytes 8-15 follow sequential pattern (0x08, 0x09, 0x0a...)
-	for i := 8; i < 16; i++ {
-		if payload[i] != byte(i) {
-			// Allow some variation for hidden data (XOR steganography)
-			// But basic pattern should be recognizable
-			diff := payload[i] ^ byte(i)
-			if diff > 127 { // Too much deviation from pattern
-				return false
-			}
+	// Bytes 0-15 = struct timeval (naturally varying — don't check).
+	// Bytes 16-55 = sequential pattern 0x10..0x37.  Check 16-23 for the marker.
+	// Allow small XOR deviation (steganographic data embedding).
+	for i := 16; i < 24; i++ {
+		diff := payload[i] ^ byte(i)
+		if diff > 127 {
+			return false
 		}
 	}
 
-	return true // Looks like legitimate Linux ping
+	return true
 }
 
 // Close shuts down the orchestrator and all components
@@ -1337,6 +1343,26 @@ func calculateEntropy(data []byte) float64 {
 	return entropy
 }
 
+// applyICMPID overrides the NetworkService's ICMP identifier based on mode:
+//   "os" or "" → keep the OS-native value set at init (PID on Linux, 0x0001 on Windows)
+//   "random"   → fresh random uint16 this operation
+//   "<digits>" → fixed value 0-65535
+func (o *Orchestrator) applyICMPID(mode string) {
+	if mode == "" || mode == "os" {
+		return
+	}
+	if mode == "random" {
+		var buf [2]byte
+		rand.Read(buf[:])
+		o.networkService.SetProcessID(uint16(buf[0])<<8 | uint16(buf[1]))
+		return
+	}
+	var id uint64
+	if _, err := fmt.Sscanf(mode, "%d", &id); err == nil && id <= 65535 {
+		o.networkService.SetProcessID(uint16(id))
+	}
+}
+
 // SetPassword updates the shared password for all crypto providers
 func (o *Orchestrator) SetPassword(password string) error {
 	o.mu.Lock()
@@ -1354,53 +1380,49 @@ func (o *Orchestrator) SetPassword(password string) error {
 	return nil
 }
 
-// extractStealthData extracts hidden data from ICMP ping payload
-// This reverses the steganography process used in network.createLinuxPingPayload and createWindowsPingPayload
+// extractStealthData extracts hidden data from ICMP ping payload.
+// Reverses the steganography applied by createLinuxPingPayload / createWindowsPingPayload.
 func (o *Orchestrator) extractStealthData(payload []byte) ([]byte, error) {
 	if len(payload) < 8 {
 		return nil, fmt.Errorf("payload too short for ping pattern")
 	}
 
-	// Skip timestamp (first 8 bytes) and extract the pattern data
-	patternData := payload[8:]
-
-	if len(patternData) == 0 {
-		return nil, fmt.Errorf("no pattern data available")
+	if len(payload) == 56 { // Linux ping payload (56B)
+		// 64-bit Linux: timeval is 16 bytes; embedding region starts at byte 16.
+		if len(payload) < 18 {
+			return nil, fmt.Errorf("linux payload too short")
+		}
+		return o.extractLinuxPattern(payload[16:])
+	} else if len(payload) == 32 { // Windows ping payload (32B)
+		// Windows alphabet prefix covers bytes 0..7; embedding starts at byte 8.
+		return o.extractWindowsPattern(payload[8:])
 	}
-
-	// Try Linux ping pattern first (most common)
-	if len(payload) == 56 { // Linux ping payload size
-		return o.extractLinuxPattern(patternData)
-	} else if len(payload) == 32 { // Windows ping payload size
-		return o.extractWindowsPattern(patternData)
-	} else {
-		// Non-standard size: raw ICMP payload (icmp_tunnel method sends encrypted data directly)
-		return payload, nil
-	}
+	// Non-standard size: raw ICMP payload (icmp_payload method)
+	return payload, nil
 }
 
-// extractLinuxPattern extracts data from the Linux ping pattern region (payload[8:]).
-// Wire format: [2-byte big-endian length][data bytes], all XOR'd with sequential pattern.
+// extractLinuxPattern extracts data from the Linux ping embedding region (payload[16:]).
+// Wire format: [2-byte big-endian length][data bytes], all XOR'd with sequential pattern 0x10..0x37.
 func (o *Orchestrator) extractLinuxPattern(patternData []byte) ([]byte, error) {
 	if len(patternData) < 2 {
 		return nil, fmt.Errorf("linux pattern too short")
 	}
 
-	// Recover length prefix (XOR'd with pattern bytes at offset 8 and 9)
-	lenHi := patternData[0] ^ 0x08
-	lenLo := patternData[1] ^ 0x09
+	// patternData = payload[16:]; sequential pattern starts at 0x10
+	lenHi := patternData[0] ^ 0x10
+	lenLo := patternData[1] ^ 0x11
 	dataLen := int(lenHi)<<8 | int(lenLo)
 
 	if dataLen == 0 {
 		return nil, nil // decoy ping: no data embedded
 	}
-	if dataLen > 46 || 2+dataLen > len(patternData) {
+	if dataLen > 38 || 2+dataLen > len(patternData) {
 		return nil, fmt.Errorf("linux pattern: invalid length prefix %d", dataLen)
 	}
 
 	extracted := make([]byte, dataLen)
 	for i := 0; i < dataLen; i++ {
-		extracted[i] = patternData[2+i] ^ byte(10+i) // pattern byte at position 8+2+i
+		extracted[i] = patternData[2+i] ^ byte(0x12+i) // pattern byte at position 18+i
 	}
 	return extracted, nil
 }

