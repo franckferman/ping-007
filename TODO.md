@@ -1,6 +1,6 @@
 # PING-007 — Roadmap
 
-Current release: **v3.0.1** · 250 tests · Go 1.25+
+Current release: **v3.0.1** · 252 tests · Go 1.25+
 
 ---
 
@@ -53,4 +53,4 @@ Cross-compiled binaries exist. Raw socket receive path is untested on Windows.
 - Decoy pings, after-pings, human timing, shell jitter
 - `--quiet` listener mode (OPSEC: suppress stdout during live ops)
 - Build variants: standard / stealth / ghost / no-c2 / compressed / armored / all-platforms
-- 250 tests, `-race` clean, no root or network required for test suite
+- 252 tests, `-race` clean, no root or network required for test suite

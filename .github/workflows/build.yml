@@ -37,6 +37,9 @@ jobs:
       - name: Test binary
         run: ./ping-007-test --version
 
+      - name: Test no-c2 binary
+        run: ./ping-007-noc2-test --version
+
       - name: Vet
         run: go vet ./...
 
@@ -73,6 +76,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
+          check-latest: true
 
       - name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
         env:

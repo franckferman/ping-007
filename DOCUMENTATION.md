@@ -360,7 +360,7 @@ go test ./internal/network/... -v
 go test ./internal/config/... -v
 ```
 
-**250 tests across 8 packages** - all passing with `-race`. No network access or root required.
+**252 tests across 8 packages** - all passing with `-race`. No network access or root required.
 
 | Package | Tests | Coverage areas |
 |---------|-------|----------------|

@@ -119,7 +119,7 @@ jobs:
             - APT timing profiles: Lazarus (5 min–1 hr), APT29 (30 min–2 hr), APT28 (10–30 min), Equation Group (1–3 days)
             - Sandbox detection, decoy pings, human timing, shell jitter
             - Build variants: standard / no-c2 / stealth / ghost / compressed / armored / all-platforms
-            - 250 tests, `-race` clean
+            - 252 tests, `-race` clean
 
             ### Downloads
 
